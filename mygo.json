@@ -2,7 +2,7 @@
   "name": "pitstop",
   "slug": "pitstop",
   "identifier": "io.github.bush2021.pitstop",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "copyright": "© 2026 Bush2021",
   "icon": "assets/icon.png",
   "out": "build",
