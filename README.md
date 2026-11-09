@@ -49,7 +49,7 @@ Pitstop sets up portable Google Chrome for use with [Chrome++ Next](https://gith
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/review-en-dark.png">
-  <img src="assets/screenshots/review-en-light.png" alt="Review, showing two changed lines in chrome++.ini with the comments around them">
+  <img src="assets/screenshots/review-en-light.png" alt="Review, showing two changed lines in chrome++.ini and the lines around them">
 </picture>
 
 ## Download and use

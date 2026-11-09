@@ -49,7 +49,7 @@ Pitstop 用来部署配合 [Chrome++ Next](https://github.com/Bush2021/chrome_pl
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/review-zh-CN-dark.png">
-  <img src="assets/screenshots/review-zh-CN-light.png" alt="查看更改：chrome++.ini 里改动的两行，以及它们周围的注释">
+  <img src="assets/screenshots/review-zh-CN-light.png" alt="查看更改：chrome++.ini 里改动的两行，以及它们前后的内容">
 </picture>
 
 ## 下载与使用
