@@ -162,7 +162,7 @@ func (a *App) Watch() {
 		for range time.Tick(2 * time.Second) {
 			if now := a.engine.ChromeRunning(); now != running {
 				running = now
-				a.Post(func() { a.running = now })
+				a.Post(func() { a.setRunning(now) })
 			}
 			if now := a.engine.Busy(); now != elsewhere {
 				elsewhere = now
@@ -197,6 +197,46 @@ func (a *App) refresh(in *install.Install, kept pitstop.KeptSizes) {
 	if u := a.plusUpdate; u != nil && u.Release.Tag == in.ChromePlus {
 		a.plusUpdate = nil
 	}
+}
+
+func (a *App) setRunning(now bool) {
+	closed := a.running && !now
+	a.running = now
+	if closed {
+		a.installWaiting()
+	}
+}
+
+// installWaiting installs what waited for Chrome to close, as the background
+// mode does when it runs. Whichever of the two finds the install busy leaves
+// the work to the other, and a Chrome that started again keeps it waiting.
+func (a *App) installWaiting() {
+	if a.busy || a.in == nil || a.in.Staged == "" && a.in.State.Approved == "" && a.in.State.ApprovedPlus == "" {
+		return
+	}
+	var done []string
+	a.run(func(ctx context.Context) error {
+		for _, p := range []struct {
+			name    string
+			install func(context.Context) (string, error)
+		}{{"Google Chrome", a.engine.InstallApproved}, {"Chrome++ Next", a.engine.InstallApprovedPlus}} {
+			v, err := p.install(ctx)
+			if errors.Is(err, pitstop.ErrBusy) || errors.Is(err, pitstop.ErrChromeRunning) {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			if v != "" {
+				done = append(done, p.name+" "+v)
+			}
+		}
+		return nil
+	}, func() {
+		if len(done) > 0 {
+			a.toast = locales.InstalledTitle(strings.Join(done, ", "))
+		}
+	})
 }
 
 func (a *App) startChrome() {
@@ -325,18 +365,15 @@ func (a *App) updateChrome() {
 		return err
 	}, func() {
 		a.chromeUpdate = nil
-		a.toast = installedToast("Google Chrome", u.Version)
-		if outcome == pitstop.Staged {
-			a.toast = stagedToast(u.Version)
-		}
+		a.toast = updatedToast("Google Chrome", u.Version, outcome)
 	})
 }
 
-// installApproved installs the approved Chrome, which normally waits for
-// the background mode to see Chrome exit. A download that failed is
-// fetched again.
+// installApproved installs the approved Chrome, which normally goes in when
+// Chrome is seen to exit. A download that failed is fetched again.
 func (a *App) installApproved() {
 	var got string
+	var outcome pitstop.Outcome
 	a.run(func(ctx context.Context) error {
 		v, err := a.engine.InstallApproved(ctx)
 		if err != nil || v != "" {
@@ -352,23 +389,40 @@ func (a *App) installApproved() {
 			return err
 		}
 		got = u.Version
-		_, err = a.engine.UpdateChrome(ctx, u)
+		outcome, err = a.engine.UpdateChrome(ctx, u)
 		return err
 	}, func() {
 		if got != "" {
-			a.toast = installedToast("Google Chrome", got)
+			a.toast = updatedToast("Google Chrome", got, outcome)
 		}
 	})
 }
 
+// installApprovedPlus is installApproved for Chrome++, except that a release
+// newer than the approved one goes in instead of it.
 func (a *App) installApprovedPlus() {
 	var got string
-	a.run(func(ctx context.Context) (err error) {
-		got, err = a.engine.InstallApprovedPlus(ctx)
+	var outcome pitstop.Outcome
+	a.run(func(ctx context.Context) error {
+		v, err := a.engine.InstallApprovedPlus(ctx)
+		if err != nil || v != "" {
+			got = v
+			return err
+		}
+		in, err := a.engine.Open()
+		if err != nil {
+			return err
+		}
+		u, err := a.engine.CheckChromePlus(ctx, in)
+		if err != nil || u == nil {
+			return err
+		}
+		got = u.Release.Tag
+		outcome, err = a.engine.UpdateChromePlus(ctx, u)
 		return err
 	}, func() {
 		if got != "" {
-			a.toast = installedToast("Chrome++ Next", got)
+			a.toast = updatedToast("Chrome++ Next", got, outcome)
 		}
 	})
 }
@@ -383,9 +437,13 @@ func (a *App) dismissFailure() {
 
 func (a *App) updateChromePlus() {
 	u := a.plusUpdate
-	a.run(func(ctx context.Context) error { return a.engine.UpdateChromePlus(ctx, u) }, func() {
+	var outcome pitstop.Outcome
+	a.run(func(ctx context.Context) (err error) {
+		outcome, err = a.engine.UpdateChromePlus(ctx, u)
+		return err
+	}, func() {
 		a.plusUpdate = nil
-		a.toast = installedToast("Chrome++ Next", u.Release.Tag)
+		a.toast = updatedToast("Chrome++ Next", u.Release.Tag, outcome)
 	})
 }
 

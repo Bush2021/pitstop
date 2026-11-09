@@ -175,21 +175,23 @@ func TestUpdateWaitsForChromeToClose(t *testing.T) {
 	engine.Hooks.Running = func(dir string) ([]chromeproc.Process, error) {
 		return []chromeproc.Process{{PID: 42, Path: filepath.Join(dir, "chrome.exe")}}, nil
 	}
-	_, err := engine.UpdateChrome(context.Background(), u)
-	var re *RunningError
-	if !errors.Is(err, ErrChromeRunning) || !errors.As(err, &re) || re.Processes[0].PID != 42 {
-		t.Fatalf("UpdateChrome = %v", err)
+	if o, err := engine.UpdateChrome(context.Background(), u); o != Pending || err != nil {
+		t.Fatalf("UpdateChrome = %v, %v", o, err)
 	}
-	if in, _ := engine.Open(); in.Chrome != "156.0.8078.48" {
-		t.Fatalf("updated to %s while Chrome ran", in.Chrome)
+	in, _ = engine.Open()
+	if ready, _ := engine.Downloaded(in); in.Chrome != "156.0.8078.48" || in.State.Approved != u.Version || !ready {
+		t.Fatalf("Chrome %s while it ran, approved %q, downloaded %v", in.Chrome, in.State.Approved, ready)
 	}
 	downloads := s.Gets.Load()
 	engine.Hooks.Running = func(string) ([]chromeproc.Process, error) { return nil, nil }
-	if _, err := engine.UpdateChrome(context.Background(), u); err != nil {
-		t.Fatal(err)
+	if o, err := engine.UpdateChrome(context.Background(), u); o != Installed || err != nil {
+		t.Fatalf("UpdateChrome once Chrome closed = %v, %v", o, err)
 	}
 	if s.Gets.Load() != downloads {
 		t.Error("downloaded the staged build again")
+	}
+	if in, _ := engine.Open(); in.State.Approved != "" {
+		t.Errorf("approval %q stayed", in.State.Approved)
 	}
 }
 
@@ -250,8 +252,8 @@ func TestUpdateWhileChromeRunsWaitsWithoutTheOptIn(t *testing.T) {
 		pitstoptest.WriteManagedChromePlus(t, filepath.Join(in.App(), "version.dll"), plus)
 		u, _ := engine.CheckChrome(context.Background(), in)
 		running(engine)
-		if _, err := engine.UpdateChrome(context.Background(), u); !errors.Is(err, ErrChromeRunning) {
-			t.Errorf("Chrome++ %s: UpdateChrome = %v", plus, err)
+		if o, err := engine.UpdateChrome(context.Background(), u); o != Pending || err != nil {
+			t.Errorf("Chrome++ %s: UpdateChrome = %v, %v", plus, o, err)
 		}
 		if in, _ := engine.Open(); in.Staged != "" {
 			t.Errorf("Chrome++ %s: staged %s", plus, in.Staged)
@@ -584,8 +586,8 @@ func TestUpdateAndRollBackChromePlus(t *testing.T) {
 	if err != nil || u == nil || u.Release.Tag != "1.18.3" {
 		t.Fatalf("CheckChromePlus = %+v, %v", u, err)
 	}
-	if err := engine.UpdateChromePlus(context.Background(), u); err != nil {
-		t.Fatal(err)
+	if o, err := engine.UpdateChromePlus(context.Background(), u); o != Installed || err != nil {
+		t.Fatalf("UpdateChromePlus = %v, %v", o, err)
 	}
 	in, _ = engine.Open()
 	dll, _ := os.ReadFile(filepath.Join(in.App(), "version.dll"))

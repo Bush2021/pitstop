@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Bush2021/pitstop/internal/defaultini"
+	"github.com/Bush2021/pitstop/internal/ghrelease"
 	"github.com/Bush2021/pitstop/internal/ini"
 	"github.com/Bush2021/pitstop/internal/install"
 )
@@ -58,6 +59,10 @@ func (e *Engine) InstallApproved(ctx context.Context) (string, error) {
 		return "", err
 	}
 	defer l.Unlock()
+	return e.installApproved(ctx)
+}
+
+func (e *Engine) installApproved(ctx context.Context) (string, error) {
 	if err := e.settle(); err != nil {
 		return "", err
 	}
@@ -73,9 +78,7 @@ func (e *Engine) InstallApproved(ctx context.Context) (string, error) {
 		return "", err
 	}
 	if install.CompareVersions(version, in.Chrome) <= 0 {
-		s := in.State
-		s.Approved = ""
-		return "", install.SaveState(e.Root, s)
+		return "", e.change(func(s *install.State) { s.Approved = "" })
 	}
 	if in.Staged != "" {
 		if err := e.unstage(in.Staged); err != nil {
@@ -93,30 +96,46 @@ func (e *Engine) InstallApproved(ctx context.Context) (string, error) {
 	return version, nil
 }
 
-// InstallApprovedPlus installs the approved Chrome++ while Chrome is closed
-// and returns its version: "" when none went in. An approval that a newer
-// release overtook goes, for the next check to ask about that one.
-func (e *Engine) InstallApprovedPlus(ctx context.Context) (string, error) {
-	in, err := e.Open()
-	if err != nil || in.State.ApprovedPlus == "" {
+// InstallApprovedPlus installs the approved Chrome++ while Chrome is closed,
+// from what is in staging, and returns its version: "" when none went in. An
+// approval waits for its download; one that the install's Chrome++ reached
+// goes.
+func (e *Engine) InstallApprovedPlus(context.Context) (string, error) {
+	l, err := e.lock()
+	if err != nil {
 		return "", err
+	}
+	defer l.Unlock()
+	return e.installApprovedPlus()
+}
+
+func (e *Engine) installApprovedPlus() (string, error) {
+	in, err := install.Open(e.Root)
+	if err != nil {
+		return "", err
+	}
+	tag := in.State.ApprovedPlus
+	if tag == "" {
+		return "", nil
 	}
 	if err := e.closed(); err != nil {
 		return "", err
 	}
-	u, err := e.CheckChromePlus(ctx, in)
-	if err != nil {
-		return "", err
+	if in.ChromePlus != "" && ghrelease.Compare(tag, in.ChromePlus) <= 0 {
+		return "", e.change(func(s *install.State) { s.ApprovedPlus = "" })
 	}
-	approved := in.State.ApprovedPlus
-	if u != nil && u.Release.Tag == approved {
-		if err := e.UpdateChromePlus(ctx, u); err != nil {
-			return "", err
-		}
-	} else {
-		approved = ""
+	dir := staging + "/chromeplus-" + tag
+	if !exists(e.path(dir, "version.dll")) {
+		return "", nil
 	}
-	return approved, e.UpdateState(func(s *install.State) { s.ApprovedPlus = "" })
+	return tag, e.swapPlus(in, dir, tag)
+}
+
+// Downloaded reports whether the approved Chrome and Chrome++ wait in
+// staging, where a failed download leaves nothing.
+func (e *Engine) Downloaded(in *install.Install) (chrome, plus bool) {
+	return exists(e.path(staging, "chrome-"+in.State.Approved, "chrome.exe")),
+		exists(e.path(staging, "chromeplus-"+in.State.ApprovedPlus, "version.dll"))
 }
 
 const (

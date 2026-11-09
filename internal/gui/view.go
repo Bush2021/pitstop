@@ -350,7 +350,16 @@ func mb(n int64) string { return fmt.Sprintf("%.1f MB", float64(n)/1e6) }
 
 func installedToast(name, version string) string { return locales.DoneInstalled(name, version) }
 
-func stagedToast(version string) string { return locales.DoneStaged(version) }
+// updatedToast says where an update of name to version ended up.
+func updatedToast(name, version string, outcome pitstop.Outcome) string {
+	switch outcome {
+	case pitstop.Staged:
+		return locales.DoneStaged(version)
+	case pitstop.Pending:
+		return locales.DonePending(name, version)
+	}
+	return installedToast(name, version)
+}
 
 func savedToast(running bool) string {
 	if running {
@@ -386,6 +395,7 @@ func (a *App) overview(c *ui.Context) {
 		return
 	}
 	in := a.in
+	chromeReady, plusReady := a.engine.Downloaded(in)
 	card(c, func() {
 		ui.Row(c).Gap(12).AlignItems(ui.Center).Children(func() {
 			ui.Column(c).Grow(1).MinWidth(0).Gap(2).Children(func() {
@@ -398,18 +408,22 @@ func (a *App) overview(c *ui.Context) {
 			ui.Text(c, locales.StatusUnsettled()).TextColor(c.Theme().Warning).Margin(4, 0, 0)
 		}
 		if in.Staged != "" && (a.chromeUpdate == nil || a.chromeUpdate.Version == in.Staged) {
-			ui.Text(c, locales.StatusStaged(in.Staged)).TextColor(c.Theme().Success).Margin(4, 0, 0)
+			ui.Row(c.Key("staged")).Gap(12).AlignItems(ui.Center).Margin(4, 0, 0).Children(func() {
+				ui.Text(c, locales.StatusStaged(in.Staged)).TextColor(c.Theme().Success).Grow(1)
+				if a.running {
+					a.restartUpdateButton(c)
+				}
+			})
 			return
 		}
 		if v := in.State.Approved; v != "" && install.CompareVersions(v, in.Chrome) > 0 && (a.chromeUpdate == nil || a.chromeUpdate.Version == v) {
-			a.waiting(c, v, a.installApproved)
+			a.waiting(c, v, chromeReady, a.installApproved)
 			return
 		}
 		a.status(c, a.chromeUpdate != nil, func() {
 			u := a.chromeUpdate
 			ui.Text(c, locales.StatusAvailable(u.Version, mb(u.DownloadSize()))).Grow(1)
-			// While Chrome holds the update back, Try again is the one action.
-			if a.retry == nil && ui.PrimaryButton(c.Key("update-chrome"), locales.UpdateButton(u.Version)).Disabled(a.busy).Clicked() {
+			if ui.PrimaryButton(c.Key("update-chrome"), locales.UpdateButton(u.Version)).Disabled(a.busy).Clicked() {
 				a.updateChrome()
 			}
 		})
@@ -428,7 +442,7 @@ func (a *App) overview(c *ui.Context) {
 			}
 		})
 		if v := in.State.ApprovedPlus; v != "" && (a.plusUpdate == nil || a.plusUpdate.Release.Tag == v) {
-			a.waiting(c, v, a.installApprovedPlus)
+			a.waiting(c, v, plusReady, a.installApprovedPlus)
 			return
 		}
 		a.status(c, a.plusUpdate != nil, func() {
@@ -438,7 +452,7 @@ func (a *App) overview(c *ui.Context) {
 			if in.ChromePlus == "" {
 				label = locales.InstallPlusButton(u.Release.Tag)
 			}
-			if a.retry == nil && ui.PrimaryButton(c.Key("update-plus"), label).Disabled(a.busy).Clicked() {
+			if ui.PrimaryButton(c.Key("update-plus"), label).Disabled(a.busy).Clicked() {
 				a.updateChromePlus()
 			}
 		})
@@ -458,7 +472,7 @@ func (a *App) overview(c *ui.Context) {
 
 func (a *App) startButton(c *ui.Context) {
 	if a.running {
-		if ui.Button(c.Key("restart"), locales.RestartButton()).Disabled(a.busy).Clicked() {
+		if ui.Button(c.Key("restart"), locales.RestartButton()).Disabled(a.busy || a.elsewhere).Clicked() {
 			a.restartOpen = true
 		}
 		return
@@ -591,12 +605,23 @@ func phaseLabel(p pitstop.Phase) string {
 	return locales.PhaseCheck()
 }
 
-// waiting shows an update that goes in once Chrome closes. With Chrome
-// closed, the background mode is done or failed, so the user can install it.
-func (a *App) waiting(c *ui.Context, version string, apply func()) {
+// restartUpdateButton restarts Chrome, which installs what waits for that.
+func (a *App) restartUpdateButton(c *ui.Context) {
+	if ui.PrimaryButton(c.Key("restart-update"), locales.RestartUpdateButton()).Disabled(a.busy || a.elsewhere).Clicked() {
+		a.restartOpen = true
+	}
+}
+
+// waiting shows an update that goes in once Chrome closes, which a restart
+// brings about when its download is there. With Chrome closed, whoever was
+// to install it is done or failed, so the user can.
+func (a *App) waiting(c *ui.Context, version string, downloaded bool, apply func()) {
 	ui.Row(c.Key(version)).Gap(12).AlignItems(ui.Center).Margin(4, 0, 0).Children(func() {
 		if a.running {
 			ui.Text(c, locales.StatusWaiting(version)).Grow(1)
+			if downloaded {
+				a.restartUpdateButton(c)
+			}
 		} else {
 			ui.Text(c, locales.StatusNotApplied(version)).Grow(1)
 			if ui.PrimaryButton(c.Key("install"), locales.UpdateNowButton()).Disabled(a.busy || a.elsewhere).Clicked() {

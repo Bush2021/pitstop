@@ -582,6 +582,16 @@ func (msgs Messages) UpdateNowButton() string {
 	return Catalog.Format(msgs.locale, "updateNowButton", nil)
 }
 
+// RestartUpdateButton says "Restart and update"
+// in the language the app shows.
+func RestartUpdateButton() string { return In(i18n.Locale()).RestartUpdateButton() }
+
+// RestartUpdateButton says "Restart and update"
+// in the language of msgs.
+func (msgs Messages) RestartUpdateButton() string {
+	return Catalog.Format(msgs.locale, "restartUpdateButton", nil)
+}
+
 // BackgroundBusy says "Pitstop is updating in the background"
 // in the language the app shows.
 func BackgroundBusy() string { return In(i18n.Locale()).BackgroundBusy() }
@@ -756,6 +766,18 @@ func DoneStaged(version string) string { return In(i18n.Locale()).DoneStaged(ver
 // in the language of msgs.
 func (msgs Messages) DoneStaged(version string) string {
 	return Catalog.Format(msgs.locale, "doneStaged", map[string]any{"version": version})
+}
+
+// DonePending says "{name} {version} goes in after you close Chrome"
+// in the language the app shows.
+func DonePending(name string, version string) string {
+	return In(i18n.Locale()).DonePending(name, version)
+}
+
+// DonePending says "{name} {version} goes in after you close Chrome"
+// in the language of msgs.
+func (msgs Messages) DonePending(name string, version string) string {
+	return Catalog.Format(msgs.locale, "donePending", map[string]any{"name": name, "version": version})
 }
 
 // ActivityTitle says "Recent activity"
@@ -1126,34 +1148,34 @@ func (msgs Messages) AskTitle(name string, version string) string {
 	return Catalog.Format(msgs.locale, "askTitle", map[string]any{"name": name, "version": version})
 }
 
-// AskBody says "Click to apply the update when you close Chrome, or to skip it."
+// AskBody says "Click to choose when to update, or to skip it."
 // in the language the app shows.
 func AskBody() string { return In(i18n.Locale()).AskBody() }
 
-// AskBody says "Click to apply the update when you close Chrome, or to skip it."
+// AskBody says "Click to choose when to update, or to skip it."
 // in the language of msgs.
 func (msgs Messages) AskBody() string {
 	return Catalog.Format(msgs.locale, "askBody", nil)
 }
 
-// AskDetail says "Pitstop applies the update after you close Chrome."
+// AskDetail says "Restart Chrome to update now, or update the next time Chrome closes."
 // in the language the app shows.
 func AskDetail() string { return In(i18n.Locale()).AskDetail() }
 
-// AskDetail says "Pitstop applies the update after you close Chrome."
+// AskDetail says "Restart Chrome to update now, or update the next time Chrome closes."
 // in the language of msgs.
 func (msgs Messages) AskDetail() string {
 	return Catalog.Format(msgs.locale, "askDetail", nil)
 }
 
-// InstallWhenClosedButton says "Update when I close Chrome"
+// LaterButton says "Later"
 // in the language the app shows.
-func InstallWhenClosedButton() string { return In(i18n.Locale()).InstallWhenClosedButton() }
+func LaterButton() string { return In(i18n.Locale()).LaterButton() }
 
-// InstallWhenClosedButton says "Update when I close Chrome"
+// LaterButton says "Later"
 // in the language of msgs.
-func (msgs Messages) InstallWhenClosedButton() string {
-	return Catalog.Format(msgs.locale, "installWhenClosedButton", nil)
+func (msgs Messages) LaterButton() string {
+	return Catalog.Format(msgs.locale, "laterButton", nil)
 }
 
 // SkipVersionButton says "Skip this version"
@@ -1188,24 +1210,14 @@ func (msgs Messages) InstalledTitle(what string) string {
 	return Catalog.Format(msgs.locale, "installedTitle", map[string]any{"what": what})
 }
 
-// InstalledBody says "Click to restart Chrome, or to open Pitstop, where you can switch back."
+// InstalledBody says "Click to start Chrome, or to open Pitstop, where you can switch back."
 // in the language the app shows.
 func InstalledBody() string { return In(i18n.Locale()).InstalledBody() }
 
-// InstalledBody says "Click to restart Chrome, or to open Pitstop, where you can switch back."
+// InstalledBody says "Click to start Chrome, or to open Pitstop, where you can switch back."
 // in the language of msgs.
 func (msgs Messages) InstalledBody() string {
 	return Catalog.Format(msgs.locale, "installedBody", nil)
-}
-
-// FailedTitle says "Pitstop couldn't update Chrome"
-// in the language the app shows.
-func FailedTitle() string { return In(i18n.Locale()).FailedTitle() }
-
-// FailedTitle says "Pitstop couldn't update Chrome"
-// in the language of msgs.
-func (msgs Messages) FailedTitle() string {
-	return Catalog.Format(msgs.locale, "failedTitle", nil)
 }
 
 // OpenPitstopButton says "Open Pitstop"

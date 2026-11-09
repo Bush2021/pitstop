@@ -30,6 +30,7 @@ func chromeEngine(t *testing.T) (*Engine, *bool) {
 
 func TestRestartChrome(t *testing.T) {
 	engine, running := chromeEngine(t)
+	pitstoptest.WriteBuild(t, engine.path(app), "156.0.8078.48")
 	*running = true
 	var did []string
 	engine.Hooks.Close = func(dir string) error {

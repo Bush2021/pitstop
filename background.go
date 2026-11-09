@@ -88,8 +88,8 @@ type notifier struct {
 	flyout *mygo.Window
 	asked  *background.Offer
 	status string
-	// restart offers to start Chrome, which an install found closed.
-	restart bool
+	// start offers to start Chrome, which an install found closed.
+	start bool
 }
 
 // post runs fn on the main thread, and redraws the flyout.
@@ -104,22 +104,22 @@ func (n *notifier) post(fn func()) {
 
 func (n *notifier) Ask(o background.Offer) {
 	n.post(func() {
-		n.asked, n.status, n.restart = &o, "", false
+		n.asked, n.status, n.start = &o, "", false
 		n.notify(locales.AskTitle(o.Name, o.Version), locales.AskBody(), n.openFlyout)
 	})
 }
 
 func (n *notifier) Installed(what string) {
 	n.post(func() {
-		n.asked, n.status, n.restart = nil, locales.InstalledTitle(what), true
+		n.asked, n.status, n.start = nil, locales.InstalledTitle(what), true
 		n.notify(n.status, locales.InstalledBody(), n.openFlyout)
 	})
 }
 
-func (n *notifier) Failed(err error) {
+func (n *notifier) Failed(what string, err error) {
 	n.post(func() {
-		n.asked, n.status, n.restart = nil, err.Error(), false
-		n.notify(locales.FailedTitle(), n.status, n.openFlyout)
+		n.asked, n.status, n.start = nil, err.Error(), false
+		n.notify(locales.BackgroundFailed(what), n.status, n.openFlyout)
 	})
 }
 
@@ -152,7 +152,7 @@ func (n *notifier) openFlyout() {
 	n.flyout = mygo.NewFlyout(mygo.FlyoutOptions{
 		Tray:      n.tray,
 		Placement: mygo.PlacementTop,
-		Width:     360,
+		Width:     420,
 		Height:    160,
 		Focusable: true,
 		Shadow:    true,
@@ -167,11 +167,14 @@ func (n *notifier) view(c *ui.Context) {
 			ui.Text(c, locales.AskTitle(o.Name, o.Version)).Bold()
 			ui.Text(c, locales.AskDetail())
 			ui.Row(c).Gap(8).Children(func() {
-				if ui.PrimaryButton(c, locales.InstallWhenClosedButton()).Clicked() {
-					n.answer(*o, true)
+				if ui.PrimaryButton(c, locales.RestartUpdateButton()).Clicked() {
+					n.answer(*o, restartNow)
+				}
+				if ui.Button(c, locales.LaterButton()).Clicked() {
+					n.answer(*o, later)
 				}
 				if ui.Button(c, locales.SkipVersionButton()).Clicked() {
-					n.answer(*o, false)
+					n.answer(*o, skip)
 				}
 			})
 			return
@@ -181,7 +184,7 @@ func (n *notifier) view(c *ui.Context) {
 			ui.Text(c, n.status).Selectable()
 		})
 		ui.Row(c).Gap(8).Children(func() {
-			if n.restart && ui.PrimaryButton(c, locales.RestartButton()).Clicked() {
+			if n.start && ui.PrimaryButton(c, locales.StartButton()).Clicked() {
 				n.startChrome()
 			}
 			if ui.Button(c, locales.OpenPitstopButton()).Clicked() {
@@ -198,26 +201,40 @@ func (n *notifier) startChrome() {
 	n.hide()
 }
 
-// answer records the user's choice, and then the icon goes: there is
+type choice int
+
+const (
+	restartNow choice = iota
+	later
+	skip
+)
+
+// answer carries out the user's choice, and then the icon goes: there is
 // nothing to say until the install.
-func (n *notifier) answer(o background.Offer, approve bool) {
+func (n *notifier) answer(o background.Offer, c choice) {
 	n.asked = nil
+	if c != skip {
+		n.status = locales.BackgroundBusy()
+	}
 	go func() {
 		var err error
-		if approve {
+		switch c {
+		case restartNow:
+			err = n.r.Restart(context.Background(), o)
+		case later:
 			err = n.r.Approve(context.Background(), o)
-		} else {
+		case skip:
 			err = n.r.Skip(context.Background(), o)
 		}
 		if err != nil {
-			log.Printf("answer for %s %s: %v", o.Name, o.Version, err)
-			n.Failed(err)
+			log.Printf("answer %d for %s %s: %v", c, o.Name, o.Version, err)
+			n.Failed(o.Name+" "+o.Version, err)
 			return
 		}
-		log.Printf("approved %v for %s %s", approve, o.Name, o.Version)
+		log.Printf("answer %d for %s %s", c, o.Name, o.Version)
 		n.post(func() {
 			n.hide()
-			if approve {
+			if c == later {
 				// Without the icon, Windows shows it beside the app's own.
 				note := mygo.NewNotification(mygo.NotificationOptions{ID: "pitstop-background", Title: locales.AppTitle(), Body: locales.ApprovedBody(o.Name, o.Version)})
 				if err := note.Show(); err != nil {

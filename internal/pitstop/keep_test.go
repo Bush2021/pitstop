@@ -77,7 +77,7 @@ func TestDeleteKeptChromePlus(t *testing.T) {
 	if err != nil || u == nil {
 		t.Fatalf("CheckChromePlus = %+v, %v", u, err)
 	}
-	if err := engine.UpdateChromePlus(context.Background(), u); err != nil {
+	if _, err := engine.UpdateChromePlus(context.Background(), u); err != nil {
 		t.Fatal(err)
 	}
 	if engine.KeptSizes().Plus == 0 {
@@ -126,7 +126,7 @@ func TestDiscardReplacedKeepsNoChromePlus(t *testing.T) {
 	if err != nil || u == nil {
 		t.Fatalf("CheckChromePlus = %+v, %v", u, err)
 	}
-	if err := engine.UpdateChromePlus(context.Background(), u); err != nil {
+	if _, err := engine.UpdateChromePlus(context.Background(), u); err != nil {
 		t.Fatal(err)
 	}
 	wantNothingKept(t, engine)

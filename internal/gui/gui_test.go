@@ -236,16 +236,46 @@ func TestUpdateWaitsForChromeToClose(t *testing.T) {
 	h.click("Check for updates")
 	h.settle()
 	h.running = []chromeproc.Process{{PID: 7, Path: `D:\Chrome\App\chrome.exe`}}
+	h.a.running = true
 	h.click("Update to 156.0.8078.74")
 	h.settle()
-	h.want("Close Chrome to finish", "Google Chrome 156.0.8078.48")
-	h.shot("running")
-	h.running = nil
-	h.click("Try again")
+	h.want("Google Chrome 156.0.8078.48", "156.0.8078.74 will be applied after you close Chrome",
+		"Google Chrome 156.0.8078.74 goes in after you close Chrome")
+	if h.tt.HasText("Close Chrome to finish") {
+		t.Error("asked to close Chrome")
+	}
+	h.shot("pending")
+	h.click("Restart and update")
+	h.want("Restart Chrome?")
+	h.click("Restart")
 	h.settle()
 	h.want("Google Chrome 156.0.8078.74")
-	if h.tt.HasText("Close Chrome to finish") {
-		t.Error("the notice stayed")
+	if h.started == "" || h.a.opErr != nil {
+		t.Errorf("started %q, error %v", h.started, h.a.opErr)
+	}
+}
+
+// The window installs what waits once it sees Chrome closed, which without
+// the background mode nothing else does.
+func TestWaitingChromePlusGoesInWhenChromeCloses(t *testing.T) {
+	h := newHarness(t, "156.0.8078.48")
+	h.setUp()
+	pitstoptest.WriteChromePlus(t, filepath.Join(h.a.in.App(), "version.dll"), "1.18.2")
+	h.a.reload()
+	h.click("Check for updates")
+	h.settle()
+	h.running = []chromeproc.Process{{PID: 7, Path: `D:\Chrome\App\chrome.exe`}}
+	h.a.running = true
+	h.click("Update to 1.18.3")
+	h.settle()
+	h.want("Chrome++ Next 1.18.2", "1.18.3 will be applied after you close Chrome", "Restart and update")
+	h.shot("pending-plus")
+	h.running = nil
+	h.a.setRunning(false)
+	h.settle()
+	h.want("Chrome++ Next 1.18.3", "Chrome++ Next 1.18.3 is ready")
+	if h.a.opErr != nil {
+		t.Errorf("error %v", h.a.opErr)
 	}
 }
 

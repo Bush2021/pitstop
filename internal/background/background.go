@@ -1,7 +1,7 @@
 // Package background is Pitstop's background mode. Chrome++ starts it with
 // Chrome when the update policy isn't Off. While Chrome runs, it checks for
-// updates and applies the policy. Once Chrome exits, it installs what was
-// approved, and quits.
+// updates, applies the policy and downloads what it allows. Once Chrome
+// exits, it installs what was approved, and quits.
 package background
 
 import (
@@ -36,17 +36,20 @@ func Postpone(period time.Duration) time.Duration {
 // Offer is an update the background mode asks about.
 type Offer struct {
 	Name, Version string
-	chrome        *pitstop.ChromeUpdate
+	// Chrome or Plus is the update on offer.
+	Chrome *pitstop.ChromeUpdate
+	Plus   *pitstop.PlusUpdate
 }
 
 // UI is how the background mode talks to the user.
 type UI interface {
-	// Ask offers an update, which the user may approve (Runner.Approve) or
-	// skip (Runner.Skip).
+	// Ask offers an update, which the user may have installed now
+	// (Runner.Restart) or when Chrome closes (Runner.Approve), or skip
+	// (Runner.Skip).
 	Ask(o Offer)
 	// Installed tells what went in once Chrome exited.
 	Installed(what string)
-	Failed(err error)
+	Failed(what string, err error)
 }
 
 type Runner struct {
@@ -157,7 +160,7 @@ func (r *Runner) check(ctx context.Context, in *install.Install) (bool, time.Tim
 		log.Printf("check: Chrome %s: %s", u.Version, a)
 		switch a {
 		case pitstop.Ask:
-			asked = r.ask(Offer{Name: "Chrome", Version: u.Version, chrome: u})
+			asked = r.ask(Offer{Name: "Chrome", Version: u.Version, Chrome: u})
 		case pitstop.Get:
 			if err := r.get(ctx, u); err != nil {
 				log.Printf("install Chrome %s: %v", u.Version, err)
@@ -171,10 +174,11 @@ func (r *Runner) check(ctx context.Context, in *install.Install) (bool, time.Tim
 		log.Printf("check: Chrome++ Next %s: %s", v, a)
 		switch {
 		case a == pitstop.Ask && !asked:
-			r.ask(Offer{Name: "Chrome++ Next", Version: v})
+			r.ask(Offer{Name: "Chrome++ Next", Version: v, Plus: p})
 		case a == pitstop.Get:
-			if err := r.setState(ctx, func(s *install.State) { s.ApprovedPlus = v }); err != nil {
-				log.Printf("approve Chrome++ Next %s: %v", v, err)
+			if err := r.getPlus(ctx, p); err != nil {
+				log.Printf("install Chrome++ Next %s: %v", v, err)
+				r.fail(ctx, "Chrome++ Next "+v, err)
 			}
 		}
 	}
@@ -193,19 +197,24 @@ func (r *Runner) ask(o Offer) bool {
 	return true
 }
 
-// get installs u as far as Chrome allows, and records what has to wait for
-// Chrome to exit.
+// get installs u as far as Chrome allows; the engine approves what has to
+// wait for Chrome to exit.
 func (r *Runner) get(ctx context.Context, u *pitstop.ChromeUpdate) error {
+	return r.update(ctx, "Chrome "+u.Version, func() (pitstop.Outcome, error) { return r.Engine.UpdateChrome(ctx, u) })
+}
+
+func (r *Runner) getPlus(ctx context.Context, u *pitstop.PlusUpdate) error {
+	return r.update(ctx, "Chrome++ Next "+u.Release.Tag, func() (pitstop.Outcome, error) { return r.Engine.UpdateChromePlus(ctx, u) })
+}
+
+func (r *Runner) update(ctx context.Context, what string, fn func() (pitstop.Outcome, error)) error {
 	var outcome pitstop.Outcome
 	err := r.whenFree(ctx, func() (err error) {
-		outcome, err = r.Engine.UpdateChrome(ctx, u)
+		outcome, err = fn()
 		return err
 	})
-	switch {
-	case errors.Is(err, pitstop.ErrChromeRunning):
-		return r.setState(ctx, func(s *install.State) { s.Approved = u.Version })
-	case err == nil && outcome == pitstop.Installed:
-		r.UI.Installed("Chrome " + u.Version)
+	if err == nil && outcome == pitstop.Installed {
+		r.UI.Installed(what)
 	}
 	return err
 }
@@ -241,7 +250,7 @@ func (r *Runner) afterExit(ctx context.Context) bool {
 }
 
 func (r *Runner) fail(ctx context.Context, what string, err error) {
-	r.UI.Failed(err)
+	r.UI.Failed(what, err)
 	r.remember(ctx, what, err)
 }
 
@@ -253,20 +262,38 @@ func (r *Runner) remember(ctx context.Context, what string, err error) {
 	}
 }
 
-// Approve has the offered update installed: Chrome's download starts now,
-// and what can't go in while Chrome runs waits for it to exit.
+// Approve has the offered update installed: its download starts now, and
+// what can't go in while Chrome runs waits for it to exit. The approval is
+// recorded first, so that a failed download stays approved.
 func (r *Runner) Approve(ctx context.Context, o Offer) error {
-	if o.chrome == nil {
-		return r.setState(ctx, func(s *install.State) { s.ApprovedPlus = o.Version })
-	}
-	if err := r.setState(ctx, func(s *install.State) { s.Approved = o.Version }); err != nil {
+	err := r.setState(ctx, func(s *install.State) {
+		if o.Plus != nil {
+			s.ApprovedPlus = o.Version
+		} else {
+			s.Approved = o.Version
+		}
+	})
+	if err != nil {
 		return err
 	}
-	err := r.get(ctx, o.chrome)
+	if o.Plus != nil {
+		err = r.getPlus(ctx, o.Plus)
+	} else {
+		err = r.get(ctx, o.Chrome)
+	}
 	if err != nil {
-		r.remember(ctx, "Chrome "+o.Version, err)
+		r.remember(ctx, o.Name+" "+o.Version, err)
 	}
 	return err
+}
+
+// Restart has the offered update installed now: Chrome closes, takes it and
+// starts again.
+func (r *Runner) Restart(ctx context.Context, o Offer) error {
+	if err := r.Approve(ctx, o); err != nil {
+		return err
+	}
+	return r.whenFree(ctx, func() error { return r.Engine.RestartChrome(ctx) })
 }
 
 func (r *Runner) Skip(ctx context.Context, o Offer) error {

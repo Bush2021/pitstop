@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -32,7 +33,9 @@ func (u *fakeUI) Ask(o Offer) {
 	}
 }
 func (u *fakeUI) Installed(what string) { u.calls = append(u.calls, "installed "+what) }
-func (u *fakeUI) Failed(err error)      { u.calls = append(u.calls, "failed "+err.Error()) }
+func (u *fakeUI) Failed(what string, _ error) {
+	u.calls = append(u.calls, "failed "+what)
+}
 
 type world struct {
 	s       *pitstoptest.Servers
@@ -329,14 +332,19 @@ func TestAutomaticMilestoneGoesInOnceChromeExits(t *testing.T) {
 	}
 }
 
-func TestApprovedChromePlusGoesInOnceChromeExits(t *testing.T) {
+func TestApprovedChromePlusGoesInOfflineOnceChromeExits(t *testing.T) {
 	w := newWorld(t, "156.0.8078.48", install.Ask, "156.0.8078.48")
 	w.olderPlus(t)
 	w.ui.approve = true
+	var gets int32
+	w.r.Wait = func(ctx context.Context, dir string) error {
+		w.engine.GitHub.Base, gets = "http://127.0.0.1:1", w.s.Gets.Load()
+		return w.wait(ctx, dir)
+	}
 	w.run(t, nil)
 	in := w.open(t)
-	if e := in.State.History[0]; e.Kind != install.PlusUpdated || e.To != "1.18.3" || in.State.ApprovedPlus != "" {
-		t.Fatalf("history starts with %+v, approved %q", e, in.State.ApprovedPlus)
+	if e := in.State.History[0]; e.Kind != install.PlusUpdated || e.To != "1.18.3" || in.State.ApprovedPlus != "" || w.s.Gets.Load() != gets {
+		t.Fatalf("history starts with %+v, approved %q, after %d more downloads", e, in.State.ApprovedPlus, w.s.Gets.Load()-gets)
 	}
 	if got := fmt.Sprint(w.ui.calls); got != "[ask 1.18.3 installed Chrome++ Next 1.18.3]" {
 		t.Errorf("told %s", got)
@@ -352,19 +360,46 @@ func TestOneNotificationCoversBothInstalls(t *testing.T) {
 	}
 }
 
-func TestFailedInstallAfterExitIsKept(t *testing.T) {
+func TestFailedChromePlusDownloadIsKept(t *testing.T) {
 	w := newWorld(t, "156.0.8078.48", install.Ask, "156.0.8078.48")
 	w.olderPlus(t)
 	w.ui.approve = true
-	w.r.Wait = func(ctx context.Context, dir string) error {
-		w.engine.GitHub.Base = "http://127.0.0.1:1"
-		return w.wait(ctx, dir)
+	// A file where the downloads go.
+	cache := filepath.Join(w.engine.Root, ".pitstop", "cache", "chromeplus")
+	os.RemoveAll(cache)
+	if err := os.WriteFile(cache, nil, 0o644); err != nil {
+		t.Fatal(err)
 	}
 	w.run(t, nil)
 	in := w.open(t)
 	f := in.State.Failure
-	if f == nil || f.What != "Chrome++ Next" || !f.Time.Equal(w.now) || f.Error == "" || in.State.ApprovedPlus != "1.18.3" {
-		t.Fatalf("failure %+v, approved %q", f, in.State.ApprovedPlus)
+	if f == nil || f.What != "Chrome++ Next 1.18.3" || !f.Time.Equal(w.now) || f.Error == "" || in.State.ApprovedPlus != "1.18.3" || in.ChromePlus != "1.18.2" {
+		t.Fatalf("failure %+v, approved %q, Chrome++ %s", f, in.State.ApprovedPlus, in.ChromePlus)
+	}
+}
+
+func TestRestartInstallsTheOfferNow(t *testing.T) {
+	w := newWorld(t, "156.0.8078.48", install.Ask, "156.0.8078.48")
+	w.olderPlus(t)
+	p, err := w.engine.CheckChromePlus(context.Background(), w.open(t))
+	if err != nil || p == nil {
+		t.Fatalf("CheckChromePlus = %+v, %v", p, err)
+	}
+	w.engine.Hooks.Close = func(string) error {
+		w.chrome = false
+		return nil
+	}
+	w.engine.Hooks.Wait = func(context.Context, string) error { return nil }
+	var started string
+	w.engine.Hooks.Start = func(string) error {
+		started, w.chrome = w.open(t).ChromePlus, true
+		return nil
+	}
+	if err := w.r.Restart(context.Background(), Offer{Name: "Chrome++ Next", Version: "1.18.3", Plus: p}); err != nil {
+		t.Fatal(err)
+	}
+	if in := w.open(t); started != "1.18.3" || in.State.ApprovedPlus != "" {
+		t.Fatalf("started Chrome with Chrome++ %q, approved %q", started, in.State.ApprovedPlus)
 	}
 }
 

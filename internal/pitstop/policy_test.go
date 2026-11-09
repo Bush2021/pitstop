@@ -131,8 +131,8 @@ func TestChromePlusWithoutTheKeyStaysOut(t *testing.T) {
 	}
 	u, _ := engine.CheckChrome(context.Background(), in)
 	running(engine)
-	if _, err := engine.UpdateChrome(context.Background(), u); !errors.Is(err, ErrChromeRunning) {
-		t.Fatalf("UpdateChrome = %v", err)
+	if o, err := engine.UpdateChrome(context.Background(), u); o != Pending || err != nil {
+		t.Fatalf("UpdateChrome = %v, %v", o, err)
 	}
 	if in, _ := engine.Open(); in.Staged != "" {
 		t.Fatalf("staged %s", in.Staged)
@@ -218,10 +218,9 @@ func TestInstallApproved(t *testing.T) {
 		t.Fatalf("InstallApproved without an approval = %q, %v", v, err)
 	}
 	closeChrome := running(engine)
-	if _, err := engine.UpdateChrome(context.Background(), u); !errors.Is(err, ErrChromeRunning) {
-		t.Fatalf("UpdateChrome while Chrome runs = %v", err)
+	if o, err := engine.UpdateChrome(context.Background(), u); o != Pending || err != nil {
+		t.Fatalf("UpdateChrome while Chrome runs = %v, %v", o, err)
 	}
-	engine.UpdateState(func(s *install.State) { s.Approved = u.Version })
 	if _, err := engine.InstallApproved(context.Background()); !errors.Is(err, ErrChromeRunning) {
 		t.Fatalf("InstallApproved while Chrome runs = %v", err)
 	}
@@ -258,31 +257,101 @@ func TestInstallApprovedPlus(t *testing.T) {
 	if v, err := engine.InstallApprovedPlus(context.Background()); v != "" || err != nil {
 		t.Fatalf("InstallApprovedPlus without an approval = %q, %v", v, err)
 	}
-	engine.UpdateState(func(s *install.State) { s.ApprovedPlus = "1.18.3" })
+	in, _ = engine.Open()
+	u, _ := engine.CheckChromePlus(context.Background(), in)
 	closeChrome := running(engine)
+	if o, err := engine.UpdateChromePlus(context.Background(), u); o != Pending || err != nil {
+		t.Fatalf("UpdateChromePlus while Chrome runs = %v, %v", o, err)
+	}
+	in, _ = engine.Open()
+	if _, ready := engine.Downloaded(in); in.ChromePlus != "1.18.2" || in.State.ApprovedPlus != "1.18.3" || !ready {
+		t.Fatalf("Chrome++ %s while Chrome ran, approved %q, downloaded %v", in.ChromePlus, in.State.ApprovedPlus, ready)
+	}
 	if _, err := engine.InstallApprovedPlus(context.Background()); !errors.Is(err, ErrChromeRunning) {
 		t.Fatalf("InstallApprovedPlus while Chrome runs = %v", err)
 	}
 	closeChrome()
-	if v, err := engine.InstallApprovedPlus(context.Background()); v != "1.18.3" || err != nil {
+	// Nothing is left to fetch once Chrome is closed.
+	engine.GitHub.Base = "http://127.0.0.1:1"
+	downloads := s.Gets.Load()
+	if v, err := engine.InstallApprovedPlus(context.Background()); v != "1.18.3" || err != nil || s.Gets.Load() != downloads {
+		t.Fatalf("InstallApprovedPlus = %q, %v, after %d downloads", v, err, s.Gets.Load()-downloads)
+	}
+	if in, _ := engine.Open(); in.ChromePlus != "1.18.3" || in.State.ApprovedPlus != "" {
+		t.Fatalf("Chrome++ %s, approval %q", in.ChromePlus, in.State.ApprovedPlus)
+	}
+}
+
+// An approval waits for its download, which is still running or failed.
+func TestInstallApprovedPlusWithoutTheDownload(t *testing.T) {
+	s := pitstoptest.NewServers(t, "156.0.8078.48")
+	engine := newEngine(t, s)
+	in := setup(t, engine, "")
+	pitstoptest.WriteChromePlus(t, filepath.Join(in.App(), "version.dll"), "1.18.2")
+	engine.UpdateState(func(s *install.State) { s.ApprovedPlus = "1.18.3" })
+	if v, err := engine.InstallApprovedPlus(context.Background()); v != "" || err != nil {
 		t.Fatalf("InstallApprovedPlus = %q, %v", v, err)
 	}
-	if in, _ := engine.Open(); in.State.ApprovedPlus != "" {
-		t.Fatalf("approval %q stayed", in.State.ApprovedPlus)
+	if in, _ := engine.Open(); in.ChromePlus != "1.18.2" || in.State.ApprovedPlus != "1.18.3" {
+		t.Fatalf("Chrome++ %s, approval %q", in.ChromePlus, in.State.ApprovedPlus)
 	}
 }
 
 func TestInstallApprovedPlusDropsAnOvertakenApproval(t *testing.T) {
-	s := pitstoptest.NewServers(t, "156.0.8078.48")
-	engine := newEngine(t, s)
-	in := setup(t, engine, "")
-	pitstoptest.WriteChromePlus(t, filepath.Join(in.App(), "version.dll"), "1.18.1")
-	engine.UpdateState(func(s *install.State) { s.ApprovedPlus = "1.18.2" })
-	if v, err := engine.InstallApprovedPlus(context.Background()); v != "" || err != nil {
-		t.Fatalf("InstallApprovedPlus = %q, %v", v, err)
+	for _, approved := range []string{"1.18.2", "1.18.3"} {
+		s := pitstoptest.NewServers(t, "156.0.8078.48")
+		engine := newEngine(t, s)
+		setup(t, engine, "")
+		engine.UpdateState(func(s *install.State) { s.ApprovedPlus = approved })
+		if v, err := engine.InstallApprovedPlus(context.Background()); v != "" || err != nil {
+			t.Fatalf("approved %s: InstallApprovedPlus = %q, %v", approved, v, err)
+		}
+		if in, _ := engine.Open(); in.ChromePlus != "1.18.3" || in.State.ApprovedPlus != "" {
+			t.Errorf("approved %s: Chrome++ %s, approval %q", approved, in.ChromePlus, in.State.ApprovedPlus)
+		}
 	}
-	if in, _ := engine.Open(); in.ChromePlus != "1.18.1" || in.State.ApprovedPlus != "" {
-		t.Fatalf("Chrome++ %s, approval %q", in.ChromePlus, in.State.ApprovedPlus)
+}
+
+// A restart through Pitstop is when Chrome is closed: what waited for that
+// is in before Chrome starts again, from what was downloaded.
+func TestRestartChromeInstallsWhatWaited(t *testing.T) {
+	s := pitstoptest.NewServers(t, "156.0.8078.48", "156.0.8078.74")
+	engine := newEngine(t, s)
+	in := setup(t, engine, "156.0.8078.48")
+	pitstoptest.WriteChromePlus(t, filepath.Join(in.App(), "version.dll"), "1.18.2")
+	in, _ = engine.Open()
+	u, _ := engine.CheckChrome(context.Background(), in)
+	p, _ := engine.CheckChromePlus(context.Background(), in)
+	closeChrome := running(engine)
+	if o, err := engine.UpdateChrome(context.Background(), u); o != Pending || err != nil {
+		t.Fatalf("UpdateChrome = %v, %v", o, err)
+	}
+	if o, err := engine.UpdateChromePlus(context.Background(), p); o != Pending || err != nil {
+		t.Fatalf("UpdateChromePlus = %v, %v", o, err)
+	}
+	downloads := s.Gets.Load()
+	engine.Hooks.Close = func(string) error {
+		closeChrome()
+		return nil
+	}
+	engine.Hooks.Wait = func(context.Context, string) error { return nil }
+	var started string
+	engine.Hooks.Start = func(string) error {
+		in, err := install.Open(engine.Root)
+		if err != nil {
+			return err
+		}
+		started = in.Chrome + " with " + in.ChromePlus
+		return nil
+	}
+	if err := engine.RestartChrome(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if started != "156.0.8078.74 with 1.18.3" || s.Gets.Load() != downloads {
+		t.Fatalf("started Chrome %s, after %d downloads", started, s.Gets.Load()-downloads)
+	}
+	if in, _ := engine.Open(); in.State.Approved != "" || in.State.ApprovedPlus != "" {
+		t.Errorf("approvals %q and %q stayed", in.State.Approved, in.State.ApprovedPlus)
 	}
 }
 
@@ -313,8 +382,8 @@ func TestInstallApprovedWhileChromeStartsAgain(t *testing.T) {
 	pitstoptest.WriteManagedChromePlus(t, filepath.Join(in.App(), "version.dll"), "1.19.0")
 	u, _ := engine.CheckChrome(context.Background(), in)
 	closeChrome := running(engine)
-	if _, err := engine.UpdateChrome(context.Background(), u); !errors.Is(err, ErrChromeRunning) {
-		t.Fatalf("UpdateChrome = %v", err)
+	if o, err := engine.UpdateChrome(context.Background(), u); o != Pending || err != nil {
+		t.Fatalf("UpdateChrome = %v, %v", o, err)
 	}
 	engine.SetPolicy(install.Ask)
 	engine.UpdateState(func(s *install.State) { s.Approved = u.Version })

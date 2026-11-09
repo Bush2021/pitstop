@@ -223,18 +223,24 @@ func (e *Engine) UpdateState(change func(*install.State)) error {
 		return err
 	}
 	defer l.Unlock()
+	var diff bool
+	err = e.change(func(s *install.State) {
+		change(s)
+		diff = s.DiffUpdates
+	})
+	if err != nil || diff {
+		return err
+	}
+	return os.RemoveAll(e.path(baseCache))
+}
+
+func (e *Engine) change(change func(*install.State)) error {
 	s, err := install.LoadState(e.Root)
 	if err != nil {
 		return err
 	}
 	change(&s)
-	if err := install.SaveState(e.Root, s); err != nil {
-		return err
-	}
-	if !s.DiffUpdates {
-		return os.RemoveAll(e.path(baseCache))
-	}
-	return nil
+	return install.SaveState(e.Root, s)
 }
 
 // Open describes the install, once it settled a build that Chrome swapped
@@ -345,15 +351,16 @@ const (
 	Installed Outcome = iota
 	// Staged: Chrome swaps the build in when it exits or restarts.
 	Staged
+	// Pending: the update waits in staging, approved, for Chrome to close.
+	Pending
 )
 
 // UpdateChrome installs u in place of the install's build, which it keeps
 // for a rollback. It downloads and stages u while Chrome runs. If Chrome
 // still runs once u is staged, an install that opted in gets u in App for
-// Chrome to swap in. Otherwise it returns a *RunningError and keeps the
-// staged build for the next attempt. With State.DiscardReplaced it keeps
-// nothing. It returns ErrPatched, before any download, when setdll patched
-// chrome.exe.
+// Chrome to swap in. Otherwise u is approved, for InstallApproved to install
+// once Chrome is closed. With State.DiscardReplaced it keeps nothing. It
+// returns ErrPatched, before any download, when setdll patched chrome.exe.
 func (e *Engine) UpdateChrome(ctx context.Context, u *ChromeUpdate) (Outcome, error) {
 	l, err := e.lock()
 	if err != nil {
@@ -389,7 +396,11 @@ func (e *Engine) UpdateChrome(ctx context.Context, u *ChromeUpdate) (Outcome, er
 	if err != nil {
 		return 0, err
 	}
-	return e.place(ctx, in, staged, u.Version, u.Channel)
+	outcome, err := e.place(ctx, in, staged, u.Version, u.Channel)
+	if errors.Is(err, ErrChromeRunning) {
+		return Pending, e.change(func(s *install.State) { s.Approved = u.Version })
+	}
+	return outcome, err
 }
 
 // place puts the verified build at dir in, or hands it to Chrome.
@@ -399,12 +410,7 @@ func (e *Engine) place(ctx context.Context, in *install.Install, dir, version st
 		if err := e.stageInUse(dir, version); err != nil {
 			return 0, err
 		}
-		s, err := install.LoadState(e.Root)
-		if err != nil {
-			return 0, err
-		}
-		s.Approved = ""
-		return Staged, install.SaveState(e.Root, s)
+		return Staged, e.change(func(s *install.State) { s.Approved = "" })
 	}
 	if running != nil {
 		return 0, running
@@ -1002,32 +1008,49 @@ func extractFile(r *sevenz.Reader, dst string) error {
 	return err
 }
 
-// UpdateChromePlus installs u in place of the install's Chrome++, which it
-// keeps for a rollback unless State.DiscardReplaced is set, under the DLL
-// name the install uses. The user's chrome++.ini stays; the release's is added
-// only when App has none.
-func (e *Engine) UpdateChromePlus(ctx context.Context, u *PlusUpdate) error {
+// UpdateChromePlus installs u in place of the install's Chrome++. It
+// downloads and stages u while Chrome runs. If Chrome still runs then, u is
+// approved, for InstallApprovedPlus to install once Chrome is closed: the
+// processes Chrome starts later must load the Chrome++ its browser started
+// with.
+func (e *Engine) UpdateChromePlus(ctx context.Context, u *PlusUpdate) (Outcome, error) {
 	l, err := e.lock()
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer l.Unlock()
 	in, err := install.Open(e.Root)
 	if err != nil {
-		return err
+		return 0, err
 	}
+	if _, err := plusDLL(in); err != nil {
+		return 0, err
+	}
+	staged, err := e.stagePlus(ctx, u, in.Arch)
+	if err != nil {
+		return 0, err
+	}
+	running := e.closed()
+	if errors.Is(running, ErrChromeRunning) {
+		return Pending, e.change(func(s *install.State) { s.ApprovedPlus = u.Release.Tag })
+	}
+	if running != nil {
+		return 0, running
+	}
+	return Installed, e.swapPlus(in, staged, u.Release.Tag)
+}
+
+// swapPlus moves the Chrome++ in staged (relative to the root) into App,
+// under the DLL name the install uses, and keeps the one it replaces for a
+// rollback unless State.DiscardReplaced is set. The user's chrome++.ini
+// stays; the release's is added only when App has none. Chrome must be
+// closed.
+func (e *Engine) swapPlus(in *install.Install, staged, tag string) error {
 	dll, err := plusDLL(in)
 	if err != nil {
 		return err
 	}
-	staged, err := e.stagePlus(ctx, u, in.Arch)
-	if err != nil {
-		return err
-	}
-	if err := e.closed(); err != nil {
-		return err
-	}
-	tx := apply.Tx{Op: fmt.Sprintf("Chrome++ Next %s to %s", cmp.Or(in.ChromePlus, "none"), u.Release.Tag)}
+	tx := apply.Tx{Op: fmt.Sprintf("Chrome++ Next %s to %s", cmp.Or(in.ChromePlus, "none"), tag)}
 	if in.ChromePlus != "" {
 		keep := rollback + "/chromeplus-" + in.ChromePlus
 		if err := os.RemoveAll(e.path(keep)); err != nil {
@@ -1048,7 +1071,9 @@ func (e *Engine) UpdateChromePlus(ctx context.Context, u *PlusUpdate) error {
 	if err := apply.Run(e.Root, e.path(journal), tx); err != nil {
 		return err
 	}
-	if err := e.record(install.Event{Kind: install.PlusUpdated, From: in.ChromePlus, To: u.Release.Tag}, nil); err != nil {
+	err = e.record(install.Event{Kind: install.PlusUpdated, From: in.ChromePlus, To: tag},
+		func(s *install.State) { s.ApprovedPlus = "" })
+	if err != nil {
 		return err
 	}
 	return e.syncINI()
