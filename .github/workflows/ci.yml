@@ -132,7 +132,7 @@ jobs:
           zip -X -j build/dist/pitstop-x64.zip build/windows-amd64/pitstop.exe
           zip -X -j build/dist/pitstop-x86.zip build/windows-386/pitstop.exe
           zip -X -j build/dist/pitstop-arm64.zip build/windows-arm64/pitstop.exe
-          find build/windows-* -type f ! -name pitstop.exe -exec cp -t build/dist {} +
+          find build/windows-* -type f ! -name pitstop.exe ! -name .mygo-files -exec cp -t build/dist {} +
           cd build/dist
           sha256sum * > SHA256SUMS
       - uses: actions/upload-artifact@v7
