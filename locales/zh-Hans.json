@@ -185,7 +185,6 @@
   "optBossKey": "老板键",
   "optBossKeyHelp": "在任何程序里都能用。隐藏所有 Chrome 窗口并静音，再按一次恢复。",
   "optTranslateKey": "翻译网页",
-  "optShowPassword": "查看已保存的密码时不用输入 Windows 密码",
   "optWin32k": "启用 win32k",
   "optWin32kHelp": "只有 Chrome++ Next 导致 Chrome 启动时崩溃才需要开启。不要和 MacType 同时使用，请在 MacType 中排除 Chrome。",
   "optIgnorePolicies": "忽略企业策略",

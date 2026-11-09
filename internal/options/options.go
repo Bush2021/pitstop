@@ -100,7 +100,6 @@ var All = []Option{
 	{Section: "general", Key: "launch_on_startup", Kind: CommandList, Page: Startup, Group: locales.Messages.GroupPrograms, Label: locales.Messages.OptLaunchOnStartup, Help: locales.Messages.OptRunHelp},
 	{Section: "general", Key: "launch_on_exit", Kind: CommandList, Page: Startup, Group: locales.Messages.GroupPrograms, Label: locales.Messages.OptLaunchOnExit, Help: locales.Messages.OptRunHelp},
 
-	{Section: "general", Key: "show_password", Kind: Switch, Default: "1", Page: Advanced, Label: locales.Messages.OptShowPassword},
 	{Section: "general", Key: "win32k", Kind: Switch, Default: "0", Page: Advanced, Label: locales.Messages.OptWin32k, Help: locales.Messages.OptWin32kHelp},
 	{Section: "general", Key: "ignore_policies", Kind: Switch, Default: "0", Page: Advanced, Label: locales.Messages.OptIgnorePolicies, Help: locales.Messages.OptIgnorePoliciesHelp},
 	{Section: "general", Key: "suppress_false_upgrade_notification", Kind: Switch, Default: "0", Page: Advanced, Label: locales.Messages.OptSuppressUpgrade, Help: locales.Messages.OptSuppressUpgradeHelp},

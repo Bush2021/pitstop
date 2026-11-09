@@ -188,7 +188,6 @@
   "optBossKey": "Boss key",
   "optBossKeyHelp": "Works in any app. Hides every Chrome window and mutes Chrome. Press it again to bring them back.",
   "optTranslateKey": "Translate the page",
-  "optShowPassword": "Show saved passwords without your Windows password",
   "optWin32k": "Allow win32k",
   "optWin32kHelp": "Turn this on only if Chrome crashes at startup with Chrome++ Next. Don't use it with MacType; exclude Chrome there instead.",
   "optIgnorePolicies": "Ignore enterprise policies",

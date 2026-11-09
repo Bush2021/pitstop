@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// ../defaultini/chrome++.ini is src/chrome++.ini of Chrome++ 1.18.3, as its
+// ../defaultini/chrome++.ini is src/chrome++.ini of Chrome++ 1.20.0, as its
 // release ships it: UTF-16LE with a BOM, CRLF line endings.
 func shipped(t *testing.T) []byte {
 	t.Helper()
@@ -26,7 +26,7 @@ func TestRoundTrip(t *testing.T) {
 	if !bytes.Equal(f.Bytes(), b) {
 		t.Fatal("the shipped chrome++.ini does not survive a round trip")
 	}
-	if f.Encoding() != UTF16LE || f.eol != "\r\n" || len(f.Lines()) != 172 {
+	if f.Encoding() != UTF16LE || f.eol != "\r\n" || len(f.Lines()) != 182 {
 		t.Errorf("encoding %v, eol %q, %d lines", f.Encoding(), f.eol, len(f.Lines()))
 	}
 	if !strings.Contains(f.Text(), "新建标签") {
@@ -185,7 +185,7 @@ func TestDelete(t *testing.T) {
 	if !f.Delete("tabs", "hover_tab") || f.Delete("tabs", "hover_tab") {
 		t.Fatal("Delete did not remove the key once")
 	}
-	if _, ok := f.Get("tabs", "hover_tab"); ok || len(f.Lines()) != 171 {
+	if _, ok := f.Get("tabs", "hover_tab"); ok || len(f.Lines()) != 181 {
 		t.Error("hover_tab is still there")
 	}
 }

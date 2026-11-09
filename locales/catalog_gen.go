@@ -1750,16 +1750,6 @@ func (msgs Messages) OptTranslateKey() string {
 	return Catalog.Format(msgs.locale, "optTranslateKey", nil)
 }
 
-// OptShowPassword says "Show saved passwords without your Windows password"
-// in the language the app shows.
-func OptShowPassword() string { return In(i18n.Locale()).OptShowPassword() }
-
-// OptShowPassword says "Show saved passwords without your Windows password"
-// in the language of msgs.
-func (msgs Messages) OptShowPassword() string {
-	return Catalog.Format(msgs.locale, "optShowPassword", nil)
-}
-
 // OptWin32k says "Allow win32k"
 // in the language the app shows.
 func OptWin32k() string { return In(i18n.Locale()).OptWin32k() }

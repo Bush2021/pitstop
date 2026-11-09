@@ -6,12 +6,14 @@ import (
 	"testing"
 
 	"github.com/Bush2021/pitstop/internal/ini"
+	"github.com/Bush2021/pitstop/internal/install"
 	"github.com/Bush2021/pitstop/locales"
 )
 
 // The schema must match the chrome++.ini Chrome++ ships: every option is
 // there, and the file's values are the defaults, but for the titles it
-// adds to the built-in list.
+// adds to the built-in list. Pitstop sets managed_updates itself, so it is
+// not an option.
 func TestSchemaMatchesTheShippedFile(t *testing.T) {
 	f, err := ini.Load("../defaultini/chrome++.ini")
 	if err != nil {
@@ -37,7 +39,7 @@ func TestSchemaMatchesTheShippedFile(t *testing.T) {
 	}
 	for _, sec := range []string{"general", "tabs"} {
 		for _, kv := range f.Keys(sec) {
-			if !seen[sec+"/"+kv.Key] {
+			if !seen[sec+"/"+kv.Key] && kv.Key != install.ManagedUpdatesKey {
 				t.Errorf("the shipped file has %s/%s, which the schema lacks", sec, kv.Key)
 			}
 		}
@@ -54,11 +56,11 @@ func TestEffective(t *testing.T) {
 		present    bool
 		want       string
 	}{
-		{"show_password", "", false, "1"},
-		{"show_password", " ", true, "1"},
-		{"show_password", "0", true, "0"},
-		{"show_password", "7", true, "1"},
-		{"show_password", "yes", true, "0"},
+		{"keep_last_tab", "", false, "1"},
+		{"keep_last_tab", " ", true, "1"},
+		{"keep_last_tab", "0", true, "0"},
+		{"keep_last_tab", "7", true, "1"},
+		{"keep_last_tab", "yes", true, "0"},
 		{"hover_tab_delay", "250", true, "250"},
 		{"hover_tab_delay", "9000", true, "400"},
 		{"hover_tab_delay", "-1", true, "400"},
