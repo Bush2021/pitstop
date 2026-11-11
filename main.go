@@ -79,11 +79,9 @@ func main() {
 		var win *mygo.Window
 		theme, _ := os.ReadFile(filepath.Join(own, "theme"))
 		showTheme(strings.TrimSpace(string(theme)))
-		// SetLocale saves the choice here, but mygo has no way to read it back.
-		language, _ := os.ReadFile(filepath.Join(own, "locale"))
 		app := gui.New(engine, mygo.App.Version(), gui.Host{
 			Post:        func(fn func()) { win.Update(fn) },
-			Language:    strings.TrimSpace(string(language)),
+			Language:    mygo.App.ChosenLocale(),
 			SetLanguage: mygo.App.SetLocale,
 			Theme:       strings.TrimSpace(string(theme)),
 			SetTheme: func(name string) {
