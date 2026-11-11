@@ -56,6 +56,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// Chrome++ starts Pitstop with Chrome's version folder as the working
+	// directory, which then can't move into rollback while Pitstop runs.
+	if err := os.Chdir(engine.Root); err != nil {
+		log.Fatal(err)
+	}
 	// Pitstop's own settings travel with the install, as its state does.
 	own := filepath.Join(install.Meta(engine.Root), "prefs")
 	mygo.App.SetPath(mygo.PathUserData, own)
