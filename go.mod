@@ -1,6 +1,6 @@
 module github.com/Bush2021/pitstop
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/404Setup/go-zucchini v1.0.0
