@@ -296,6 +296,9 @@ type Failure struct {
 	Time  time.Time `json:"time"`
 	What  string    `json:"what"`
 	Error string    `json:"error"`
+	// Trouble and Host are pitstop.Explain's reading of the error.
+	Trouble string `json:"trouble,omitempty"`
+	Host    string `json:"host,omitempty"`
 }
 
 // CheckEvery is how long the background mode waits between checks.

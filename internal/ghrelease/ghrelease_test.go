@@ -2,6 +2,7 @@ package ghrelease
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -62,6 +63,9 @@ func TestLatestWithoutAManifest(t *testing.T) {
 	_, err := (&Client{Base: srv.URL}).Latest(context.Background())
 	if err == nil || !strings.Contains(err.Error(), "update.json") {
 		t.Errorf("Latest = %v", err)
+	}
+	if s, ok := errors.AsType[*StatusError](err); !ok || !strings.HasPrefix(s.Status, "404") {
+		t.Errorf("StatusError = %+v", s)
 	}
 }
 

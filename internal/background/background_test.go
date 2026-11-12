@@ -1,9 +1,12 @@
 package background
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -409,6 +412,29 @@ func TestFailedDownloadIsKept(t *testing.T) {
 	w.run(t, nil)
 	f := w.open(t).State.Failure
 	if f == nil || f.What != "Chrome 156.0.8078.74" || !strings.Contains(f.Error, "bad signature") {
+		t.Fatalf("failure %+v", f)
+	}
+}
+
+type dropDownloads struct{ next http.RoundTripper }
+
+func (d dropDownloads) RoundTrip(r *http.Request) (*http.Response, error) {
+	if r.Method == http.MethodGet {
+		return nil, io.ErrUnexpectedEOF
+	}
+	return d.next.RoundTrip(r)
+}
+
+// A download that failed on the network is kept as that, for the window
+// to explain.
+func TestFailedDownloadKeepsItsTrouble(t *testing.T) {
+	w := newWorld(t, "155.", install.Automatic, "155.0.8059.85", "156.0.8078.74")
+	client := *w.engine.HTTP
+	client.Transport = dropDownloads{cmp.Or[http.RoundTripper](client.Transport, http.DefaultTransport)}
+	w.engine.HTTP = &client
+	w.run(t, nil)
+	f := w.open(t).State.Failure
+	if f == nil || f.What != "Chrome 156.0.8078.74" || f.Trouble != string(pitstop.NetworkTrouble) {
 		t.Fatalf("failure %+v", f)
 	}
 }

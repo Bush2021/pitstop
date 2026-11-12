@@ -562,6 +562,66 @@ func (msgs Messages) PatchedBody() string {
 	return Catalog.Format(msgs.locale, "patchedBody", nil)
 }
 
+// NetworkTitle says "Couldn't connect"
+// in the language the app shows.
+func NetworkTitle() string { return In(i18n.Locale()).NetworkTitle() }
+
+// NetworkTitle says "Couldn't connect"
+// in the language of msgs.
+func (msgs Messages) NetworkTitle() string {
+	return Catalog.Format(msgs.locale, "networkTitle", nil)
+}
+
+// NetworkBody says "Pitstop couldn't reach {host}. Check your network connection and try again."
+// in the language the app shows.
+func NetworkBody(host string) string { return In(i18n.Locale()).NetworkBody(host) }
+
+// NetworkBody says "Pitstop couldn't reach {host}. Check your network connection and try again."
+// in the language of msgs.
+func (msgs Messages) NetworkBody(host string) string {
+	return Catalog.Format(msgs.locale, "networkBody", map[string]any{"host": host})
+}
+
+// NetworkBodyNoHost says "The network connection dropped during the download. Check your network connection and try again."
+// in the language the app shows.
+func NetworkBodyNoHost() string { return In(i18n.Locale()).NetworkBodyNoHost() }
+
+// NetworkBodyNoHost says "The network connection dropped during the download. Check your network connection and try again."
+// in the language of msgs.
+func (msgs Messages) NetworkBodyNoHost() string {
+	return Catalog.Format(msgs.locale, "networkBodyNoHost", nil)
+}
+
+// ServerTitle says "The server had a problem"
+// in the language the app shows.
+func ServerTitle() string { return In(i18n.Locale()).ServerTitle() }
+
+// ServerTitle says "The server had a problem"
+// in the language of msgs.
+func (msgs Messages) ServerTitle() string {
+	return Catalog.Format(msgs.locale, "serverTitle", nil)
+}
+
+// ServerBody says "{host} couldn't answer right now. Try again later."
+// in the language the app shows.
+func ServerBody(host string) string { return In(i18n.Locale()).ServerBody(host) }
+
+// ServerBody says "{host} couldn't answer right now. Try again later."
+// in the language of msgs.
+func (msgs Messages) ServerBody(host string) string {
+	return Catalog.Format(msgs.locale, "serverBody", map[string]any{"host": host})
+}
+
+// ServerBodyNoHost says "The update server couldn't answer right now. Try again later."
+// in the language the app shows.
+func ServerBodyNoHost() string { return In(i18n.Locale()).ServerBodyNoHost() }
+
+// ServerBodyNoHost says "The update server couldn't answer right now. Try again later."
+// in the language of msgs.
+func (msgs Messages) ServerBodyNoHost() string {
+	return Catalog.Format(msgs.locale, "serverBodyNoHost", nil)
+}
+
 // DismissButton says "Dismiss"
 // in the language the app shows.
 func DismissButton() string { return In(i18n.Locale()).DismissButton() }

@@ -256,7 +256,8 @@ func (r *Runner) fail(ctx context.Context, what string, err error) {
 
 // remember keeps a failure for the window to show.
 func (r *Runner) remember(ctx context.Context, what string, err error) {
-	f := &install.Failure{Time: r.Conditions().Now, What: what, Error: err.Error()}
+	trouble, host := pitstop.Explain(err)
+	f := &install.Failure{Time: r.Conditions().Now, What: what, Error: err.Error(), Trouble: string(trouble), Host: host}
 	if err := r.setState(ctx, func(s *install.State) { s.Failure = f }); err != nil {
 		log.Printf("recording the failure: %v", err)
 	}

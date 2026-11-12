@@ -33,6 +33,14 @@ type Asset struct {
 	URL    string
 }
 
+// StatusError is GitHub's answer other than 200 OK.
+type StatusError struct {
+	URL    string
+	Status string
+}
+
+func (e *StatusError) Error() string { return "GitHub answered " + e.Status + " for " + e.URL }
+
 type Client struct {
 	HTTP *http.Client
 	// Base is where the repository is, https://github.com unless a test
@@ -86,7 +94,7 @@ func (c *Client) get(ctx context.Context, u string, v any) error {
 		return err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("GitHub answered %s for %s", resp.Status, u)
+		return &StatusError{URL: u, Status: resp.Status}
 	}
 	return json.Unmarshal(body, v)
 }

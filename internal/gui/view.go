@@ -502,7 +502,12 @@ func (a *App) operation(c *ui.Context) {
 				ui.Text(c, locales.BackgroundFailed(f.What)).Bold().TextColor(c.Theme().Danger).Grow(1)
 				muted(c, i18n.FormatDate(c.Locale(), f.Time.Local(), i18n.DateOptions{Date: i18n.MediumStyle, Time: i18n.ShortStyle}))
 			})
-			ui.Text(c, f.Error).Selectable()
+			if body := troubleBody(pitstop.Trouble(f.Trouble), f.Host); body != "" {
+				ui.Text(c, body)
+				muted(c, f.Error).Selectable()
+			} else {
+				ui.Text(c, f.Error).Selectable()
+			}
 			ui.Row(c).Children(func() {
 				if ui.Button(c.Key("dismiss-failure"), locales.DismissButton()).Clicked() {
 					a.dismissFailure()
@@ -554,6 +559,21 @@ func (a *App) operation(c *ui.Context) {
 				}
 			})
 		})
+	case explained(a.opErr):
+		card(c, func() {
+			trouble, host := pitstop.Explain(a.opErr)
+			ui.Text(c, troubleTitle(trouble)).Bold().TextColor(c.Theme().Danger)
+			ui.Text(c, troubleBody(trouble, host))
+			muted(c, a.opErr.Error()).Selectable()
+			ui.Row(c).Gap(8).Children(func() {
+				if a.retry != nil && ui.PrimaryButton(c, locales.TryAgainButton()).Clicked() {
+					a.retry()
+				}
+				if ui.Button(c, locales.DismissButton()).Clicked() {
+					a.opErr, a.retry = nil, nil
+				}
+			})
+		})
 	case a.opErr != nil:
 		card(c, func() {
 			ui.Text(c, locales.ErrorTitle()).Bold().TextColor(c.Theme().Danger)
@@ -572,6 +592,36 @@ func (a *App) operation(c *ui.Context) {
 			})
 		})
 	}
+}
+
+// explained reports whether err is one the user is told about in plain
+// words, which retrying may mend.
+func explained(err error) bool {
+	t, _ := pitstop.Explain(err)
+	return t != ""
+}
+
+func troubleTitle(t pitstop.Trouble) string {
+	if t == pitstop.ServerTrouble {
+		return locales.ServerTitle()
+	}
+	return locales.NetworkTitle()
+}
+
+// troubleBody is what to tell the user instead of the error, or "" when
+// the error says it best.
+func troubleBody(t pitstop.Trouble, host string) string {
+	switch {
+	case t == pitstop.NetworkTrouble && host != "":
+		return locales.NetworkBody(host)
+	case t == pitstop.NetworkTrouble:
+		return locales.NetworkBodyNoHost()
+	case t == pitstop.ServerTrouble && host != "":
+		return locales.ServerBody(host)
+	case t == pitstop.ServerTrouble:
+		return locales.ServerBodyNoHost()
+	}
+	return ""
 }
 
 func (a *App) failure() *install.Failure {

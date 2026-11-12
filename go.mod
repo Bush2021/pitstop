@@ -4,7 +4,7 @@ go 1.27.4
 
 require (
 	github.com/404Setup/go-zucchini v1.0.0
-	github.com/Bush2021/chrome_update v0.7.0
+	github.com/Bush2021/chrome_update v0.8.0
 	github.com/egoist/mygo v0.9.0
 	github.com/gofrs/flock v0.13.2
 	golang.org/x/sys v0.50.0

@@ -320,7 +320,7 @@ func (a *App) run(op func(ctx context.Context) error, done func()) {
 			a.reload()
 			switch {
 			case errors.Is(err, context.Canceled):
-			case errors.Is(err, pitstop.ErrChromeRunning):
+			case errors.Is(err, pitstop.ErrChromeRunning), explained(err):
 				a.opErr = err
 				a.retry = func() { a.run(op, done) }
 			case err != nil:
