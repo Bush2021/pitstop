@@ -273,6 +273,10 @@ func (a *App) reload() {
 	if disk, err := os.ReadFile(a.iniPath); a.saved != nil && err == nil && bytes.Equal(disk, a.saved.Bytes()) {
 		return
 	}
+	// Unsaved edits stay, and saving them over the changed file asks first.
+	if a.saved != nil && a.draft != nil && !bytes.Equal(a.draft.Bytes(), a.saved.Bytes()) {
+		return
+	}
 	a.loadINI()
 }
 
@@ -696,6 +700,7 @@ func (a *App) moveData() {
 		}
 		return draft.Save(path)
 	}, func() {
+		a.loadINI()
 		a.savedSettings()
 		a.toast = locales.DoneMoved(to)
 	})
