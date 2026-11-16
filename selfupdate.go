@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/egoist/mygo"
 )
@@ -22,9 +21,6 @@ func (s *selfUpdater) install(ctx context.Context) error {
 	if s.installed {
 		return nil
 	}
-	// The Chrome check waits for this, and mygo's downloads have no timeout.
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
-	defer cancel()
 	u, err := mygo.Updater.Check(ctx)
 	if err != nil || u == nil {
 		return err
