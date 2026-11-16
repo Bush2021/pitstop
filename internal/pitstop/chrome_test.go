@@ -229,8 +229,22 @@ func TestMoveByCopy(t *testing.T) {
 	if got := files(t, to); len(got) != 3 || got["Default/Code Cache/js/x"] != "3" {
 		t.Errorf("to holds %q", got)
 	}
-	if exists(from) || exists(to+".partial") {
-		t.Errorf("left behind: %q", entries(t, dir))
+	if got := entries(t, dir); len(got) != 1 {
+		t.Errorf("left behind: %q", got)
+	}
+}
+
+func TestMoveByCopyLeavesASiblingAlone(t *testing.T) {
+	engine, _ := chromeEngine(t)
+	dir := t.TempDir()
+	from, to := filepath.Join(dir, "from"), filepath.Join(dir, "to")
+	writeFiles(t, from, map[string]string{"Local State": "1"})
+	writeFiles(t, to+".partial", map[string]string{"mine": "2"})
+	if err := engine.moveByCopy(context.Background(), from, to); err != nil {
+		t.Fatal(err)
+	}
+	if files(t, to+".partial")["mine"] != "2" {
+		t.Error("the move deleted a folder it didn't make")
 	}
 }
 

@@ -86,11 +86,11 @@ func (e *Engine) MoveData(ctx context.Context, from, to string) error {
 
 // moveByCopy moves a folder across volumes, where a rename can't.
 func (e *Engine) moveByCopy(ctx context.Context, from, to string) error {
-	partial := to + ".partial"
-	if err := os.RemoveAll(partial); err != nil {
+	partial, err := os.MkdirTemp(filepath.Dir(to), filepath.Base(to)+".partial-*")
+	if err != nil {
 		return err
 	}
-	err := copyTree(ctx, from, partial, e.report(Moving))
+	err = copyTree(ctx, from, partial, e.report(Moving))
 	if running := e.closed(); running != nil {
 		err = running
 	}
