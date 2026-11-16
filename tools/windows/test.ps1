@@ -77,3 +77,6 @@ if ($script:Failures.Count -eq 0) {
 }
 Write-Host "The log is $Log"
 Stop-Transcript | Out-Null
+if ($script:Failures.Count -gt 0) {
+    exit 1
+}
