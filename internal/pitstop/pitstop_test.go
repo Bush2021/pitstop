@@ -98,6 +98,26 @@ func TestSetup(t *testing.T) {
 	}
 }
 
+func TestSetupDropsWhatAnEarlierSetupStaged(t *testing.T) {
+	s := pitstoptest.NewServers(t, "156.0.8078.74")
+	engine := newEngine(t, s)
+	for _, name := range []string{"chrome-156.0.8078.74/chrome.exe", "chromeplus-1.18.3/version.dll"} {
+		p := engine.path(staging, name)
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte("x86"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	in := setup(t, engine, "")
+	for _, name := range []string{"chrome.exe", "version.dll"} {
+		if b, _ := os.ReadFile(filepath.Join(in.App(), name)); string(b) == "x86" {
+			t.Errorf("%s came from the earlier setup", name)
+		}
+	}
+}
+
 func TestSetupRefusesAReleaseWithoutADigest(t *testing.T) {
 	s := pitstoptest.NewServers(t, "156.0.8078.74")
 	s.SHA256 = ""

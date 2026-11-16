@@ -1176,6 +1176,11 @@ func (e *Engine) Setup(ctx context.Context, o SetupOptions) error {
 	if exists(e.path(app)) {
 		return ErrInstalled
 	}
+	// A setup that failed may have staged builds for another architecture,
+	// under the same names.
+	if err := e.prune(staging, func(string) bool { return false }); err != nil {
+		return err
+	}
 	u, _, err := e.checkChrome(ctx, omaha.Request{Channel: o.Channel, Arch: o.Arch, Target: o.Target})
 	if err != nil {
 		return err
