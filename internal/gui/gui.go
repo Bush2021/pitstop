@@ -687,7 +687,7 @@ func (a *App) savedSettings() {
 // that chrome++.ini and the folder never disagree. The Overview shows how
 // it goes.
 func (a *App) moveData() {
-	from, to, draft, path := a.moveFrom, a.moveTo, a.draft, a.iniPath
+	from, to, draft, path := a.moveFrom, a.moveTo, ini.Parse(a.draft.Bytes()), a.iniPath
 	a.page, a.raw, a.review = pageOverview, nil, nil
 	a.run(func(ctx context.Context) error {
 		if a.engine.ChromeRunning() {
