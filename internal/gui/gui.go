@@ -698,7 +698,11 @@ func (a *App) moveData() {
 		if err := a.engine.MoveData(ctx, from, to); err != nil {
 			return err
 		}
-		return draft.Save(path)
+		if err := draft.Save(path); err != nil {
+			// chrome++.ini still names from, where Chrome would start empty.
+			return errors.Join(err, a.engine.MoveData(ctx, to, from))
+		}
+		return nil
 	}, func() {
 		a.loadINI()
 		a.savedSettings()
