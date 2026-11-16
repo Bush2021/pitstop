@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"syscall"
 	"unsafe"
 
@@ -66,24 +67,36 @@ func Close(dir string) error {
 	for _, p := range ps {
 		pids[p.PID] = true
 	}
-	denied := false
-	visit := windows.NewCallback(func(hwnd windows.HWND, _ uintptr) uintptr {
-		var pid uint32
-		if _, err := windows.GetWindowThreadProcessId(hwnd, &pid); err == nil && pids[pid] && isBrowserWindow(hwnd) {
-			if ok, _, err := postMessage.Call(uintptr(hwnd), wmSysCommand, idcExit, 0); ok == 0 && errors.Is(err, windows.ERROR_ACCESS_DENIED) {
-				denied = true
-			}
-		}
-		return 1
-	})
-	if err := windows.EnumWindows(visit, nil); err != nil {
+	closing.Lock()
+	defer closing.Unlock()
+	closing.pids, closing.denied = pids, false
+	if err := windows.EnumWindows(visitWindow, nil); err != nil {
 		return err
 	}
-	if denied {
+	if closing.denied {
 		return ErrElevated
 	}
 	return nil
 }
+
+// Go never frees a callback, and each closure takes one of a fixed number,
+// so every Close shares one.
+var (
+	closing struct {
+		sync.Mutex
+		pids   map[uint32]bool
+		denied bool
+	}
+	visitWindow = windows.NewCallback(func(hwnd windows.HWND, _ uintptr) uintptr {
+		var pid uint32
+		if _, err := windows.GetWindowThreadProcessId(hwnd, &pid); err == nil && closing.pids[pid] && isBrowserWindow(hwnd) {
+			if ok, _, err := postMessage.Call(uintptr(hwnd), wmSysCommand, idcExit, 0); ok == 0 && errors.Is(err, windows.ERROR_ACCESS_DENIED) {
+				closing.denied = true
+			}
+		}
+		return 1
+	})
+)
 
 func isBrowserWindow(hwnd windows.HWND) bool {
 	if !windows.IsWindowVisible(hwnd) {
