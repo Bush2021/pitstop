@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Bush2021/mygo-kit"
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
@@ -22,10 +23,6 @@ import (
 	"github.com/Bush2021/pitstop/locales"
 )
 
-func icon(shapes string) *ui.SVG {
-	return ui.MustParseSVG([]byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">` + shapes + `</svg>`))
-}
-
 type navItem struct {
 	id    string
 	icon  *ui.SVG
@@ -34,67 +31,23 @@ type navItem struct {
 
 var (
 	appIcon      = ui.MustParseSVG(assets.Icon)
-	overviewItem = navItem{pageOverview, icon(`<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>`), locales.PageOverview}
+	overviewItem = navItem{pageOverview, kit.Icon(`<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>`), locales.PageOverview}
 	// plusItems edit chrome++.ini, which takes a save and a Chrome restart.
 	plusItems = []navItem{
-		{pageTabs, icon(`<path d="M3 20V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3h6a2 2 0 0 1 2 2v8"/><path d="M2 20h20"/>`), locales.PageTabs},
-		{pageKeyboard, icon(`<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>`), locales.PageKeyboard},
-		{pageStartup, icon(`<path d="M12 3v9"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/>`), locales.PageStartup},
-		{pageAdvanced, icon(`<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>`), locales.PageAdvanced},
+		{pageTabs, kit.Icon(`<path d="M3 20V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3h6a2 2 0 0 1 2 2v8"/><path d="M2 20h20"/>`), locales.PageTabs},
+		{pageKeyboard, kit.Icon(`<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>`), locales.PageKeyboard},
+		{pageStartup, kit.Icon(`<path d="M12 3v9"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/>`), locales.PageStartup},
+		{pageAdvanced, kit.Icon(`<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>`), locales.PageAdvanced},
 	}
 	// ownItems are Pitstop's own, whose settings apply at once.
 	ownItems = []navItem{
-		{pageSettings, icon(`<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>`), locales.PageSettings},
-		{pageAbout, icon(`<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>`), locales.PageAbout},
+		{pageSettings, kit.Icon(`<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>`), locales.PageSettings},
+		{pageAbout, kit.Icon(`<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>`), locales.PageAbout},
 	}
 )
-
-// contentWidth keeps a control near its label in a wide window.
-const contentWidth = 1120
-
-// Identities for ui.ElementTransition's Match.
-type (
-	navPill  struct{}
-	segThumb struct{ id string }
-)
-
-var (
-	// flow moves what a row coming or going pushes around.
-	flow = ui.ElementTransition{Animation: &ui.Snappy, Position: true, Size: true}
-	// rowMotion is flow for the row itself.
-	rowMotion = ui.ElementTransition{Animation: &ui.Snappy, Position: true, Size: true,
-		Enter: &ui.Motion{Collapse: true}, Exit: &ui.Motion{Collapse: true}}
-)
-
-// applyTheme gives the window Windows 11's surfaces: translucent layers, so
-// that Mica shows through, and text colors that reach 4.5:1 on them.
-func applyTheme(c *ui.Context) {
-	t := *c.Theme()
-	white := ui.Hex("#ffffff")
-	if t.Dark {
-		t.Background = ui.Hex("#202020")
-		t.Surface = white.Alpha(.06)
-		t.SurfaceHover = white.Alpha(.085)
-		t.SurfacePressed = white.Alpha(.12)
-		t.Border = white.Alpha(.08)
-		t.TextMuted = ui.Hex("#a6a6a6")
-	} else {
-		black := ui.Hex("#000000")
-		t.Background = ui.Hex("#f3f3f3")
-		t.Surface = white.Alpha(.7)
-		t.SurfaceHover = black.Alpha(.04)
-		t.SurfacePressed = black.Alpha(.07)
-		t.Border = black.Alpha(.09)
-		t.TextMuted = ui.Hex("#616169")
-		t.Danger = ui.Hex("#c42b1c")
-		t.Warning = ui.Hex("#9d5d00")
-		t.Success = ui.Hex("#0f7b0f")
-	}
-	c.SetTheme(&t)
-}
 
 func (a *App) View(c *ui.Context) {
-	applyTheme(c)
+	kit.Apply(c)
 	if a.toast != "" {
 		c.Toast(a.toast)
 		a.toast = ""
@@ -102,107 +55,50 @@ func (a *App) View(c *ui.Context) {
 	if !a.Recording() && c.Shortcut(ui.Cmd, ui.KeyS) {
 		a.saveKey()
 	}
-	t := c.Theme()
-	layer := ui.Hex("#ffffff").Alpha(.5)
-	if t.Dark {
-		layer = ui.Hex("#3a3a3a").Alpha(.3)
-	}
-	ui.Row(c).Fill().AlignItems(ui.Stretch).Children(func() {
-		a.sidebar(c)
-		ui.Column(c).Grow(1).MinWidth(0).Background(layer).Children(func() {
-			switch {
-			case a.raw != nil:
-				a.rawView(c)
-			case a.review != nil:
-				a.reviewView(c)
-			default:
-				ui.Scroll(c.Key(a.page+"/"+a.query)).Grow(1).Padding(24, 32, 32).AlignItems(ui.Center).Children(func() {
-					ui.Column(c).Gap(8).FillWidth().MaxWidth(contentWidth).Children(func() { a.content(c) })
-				})
-				a.pendingBar(c)
-			}
-		})
+	kit.Shell(c, func() { a.sidebar(c) }, func() {
+		switch {
+		case a.raw != nil:
+			a.rawView(c)
+		case a.review != nil:
+			a.reviewView(c)
+		default:
+			ui.Column(c.Key(a.page)).Grow(1).MinHeight(0).Transition(kit.PageEnter).Children(func() {
+				kit.NarrowPage(c.Key(a.page+"/"+a.query), func() { a.content(c) })
+			})
+			a.pendingBar(c)
+		}
 	})
-	// After the sidebar, as SetTheme sets the root's color again.
-	if c.Vibrancy() {
-		c.Root().Background(ui.Transparent)
-	}
 	a.dialogs(c)
 	a.referenceDialog(c)
 }
 
 func (a *App) sidebar(c *ui.Context) {
-	t := c.Theme()
-	ui.Column(c).Width(240).Shrink(0).Padding(16, 8).Gap(8).Children(func() {
-		search := ui.SearchField(c.Key("search"), &a.query).Label(locales.SearchPlaceholder()).Margin(0, 10)
-		// The text editor and the review find in what they show.
-		if a.raw == nil && a.review == nil && !a.Recording() && c.Shortcut(ui.Cmd, ui.KeyF) {
-			search.Focus()
-		}
-		selected := a.page
-		item := func(n navItem) {
-			chosen := n.id == selected
-			// As in Windows' Settings, a pill marks the page. mygo would fill
-			// the item with the accent color while the list has the focus.
-			quiet := *t
-			if chosen {
-				quiet.AccentText = t.Accent
-			} else {
-				quiet.Accent = t.TextMuted
+	kit.SidebarHeader(c, locales.AppTitle(), a.version)
+	search := ui.SearchField(c.Key("search"), &a.query).Label(locales.SearchPlaceholder()).Margin(0, 10)
+	// The text editor and the review find in what they show.
+	if a.raw == nil && a.review == nil && !a.Recording() && c.Shortcut(ui.Cmd, ui.KeyF) {
+		search.Focus()
+	}
+	selected := a.page
+	item := func(n navItem) { kit.NavItem(c, n.id, n.icon, n.label(), n.id == selected, nil) }
+	if ui.Sidebar(c, &selected, func() {
+		item(overviewItem)
+		ui.SidebarSection(c, "Chrome++ Next", nil, func() {
+			for _, n := range plusItems {
+				item(n)
 			}
-			c.SetTheme(&quiet)
-			row := ui.SidebarItem(c, n.id, n.icon, n.label())
-			c.SetTheme(t)
-			if chosen {
-				row.Background(t.SurfacePressed).TextColor(t.Text).Children(func() {
-					ui.Box(c).Absolute().Left(0).Top(8).Bottom(8).Width(3).Radius(2).Background(t.Accent).
-						Transition(ui.ElementTransition{Animation: &ui.Snappy, Match: navPill{}})
-				})
+		})
+		ui.SidebarSection(c, locales.AppTitle(), nil, func() {
+			for _, n := range ownItems {
+				item(n)
 			}
+		})
+	}).Grow(1).Background(ui.Transparent).Label(locales.AppTitle()).Changed() {
+		if a.raw != nil && !a.applyRaw() {
+			return
 		}
-		// The list fills itself with Surface, which would hide the material.
-		if ui.Sidebar(c, &selected, func() {
-			item(overviewItem)
-			ui.SidebarSection(c, "Chrome++ Next", nil, func() {
-				for _, n := range plusItems {
-					item(n)
-				}
-			})
-			ui.SidebarSection(c, locales.AppTitle(), nil, func() {
-				for _, n := range ownItems {
-					item(n)
-				}
-			})
-		}).Grow(1).Background(ui.Transparent).Label(locales.AppTitle()).Changed() {
-			if a.raw != nil && !a.applyRaw() {
-				return
-			}
-			a.page, a.query, a.raw = selected, "", nil
-		}
-	})
-}
-
-func title(c *ui.Context, s string) ui.Element {
-	return ui.Text(c, s).FontSize(26).FontWeight(600).Margin(0, 0, 8)
-}
-
-func muted(c *ui.Context, s string) ui.Element {
-	return ui.Text(c, s).FontSize(12).TextColor(c.Theme().TextMuted)
-}
-
-func card(c *ui.Context, body func()) ui.Element {
-	t := c.Theme()
-	return ui.Column(c).Padding(16).Gap(8).Radius(8).Background(t.Surface).Border(1, t.Border).Transition(flow).Children(body)
-}
-
-func heading(c *ui.Context, s string) ui.Element {
-	return ui.Text(c, s).FontWeight(600).Margin(16, 0, 0).Transition(flow)
-}
-
-// panel holds settingRows as one surface, with a hairline between them.
-func panel(c *ui.Context, body func()) ui.Element {
-	t := c.Theme()
-	return ui.Column(c).Radius(8).Background(t.Surface).Border(1, t.Border).Dividers(1, t.Border).Transition(flow).Children(body)
+		a.page, a.query, a.raw = selected, "", nil
+	}
 }
 
 // sections shows items in panels, one for each run of items of a group,
@@ -217,9 +113,9 @@ func sections[T any](c *ui.Context, items []T, group func(T) string, row func(T)
 		run := items[:n]
 		items = items[n:]
 		if name != "" {
-			heading(c.Key("heading/"+name), name)
+			kit.Heading(c.Key("heading/"+name), name)
 		}
-		panel(c.Key("panel/"+name), func() {
+		kit.Panel(c.Key("panel/"+name), func() {
 			for _, item := range run {
 				row(item)
 			}
@@ -238,50 +134,7 @@ func groupName(o options.Option, msgs locales.Messages) string {
 // settingRow is a setting as Windows' Settings show one: what it does on
 // the left, its control on the right, anything long below them.
 func settingRow(c *ui.Context, key any, body func()) ui.Element {
-	return ui.Column(c.Key(key)).Gap(8).Padding(12, 16).Transition(rowMotion).Children(body)
-}
-
-// segmented is ui.Segmented with a thumb that slides to the segment chosen.
-// id tells it from the other controls in the window.
-func segmented(c *ui.Context, id string, selected *int, labels ...string) ui.Element {
-	t := c.Theme()
-	radius := max(t.Radius-2, 0)
-	thumb := ui.Hex("#ffffff")
-	if t.Dark {
-		thumb = t.SurfacePressed
-	}
-	parts := ui.SegmentedBase(c.Key(id), selected, len(labels))
-	return parts.Track.AlignItems(ui.Stretch).Padding(2).Gap(2).Radius(t.Radius).Background(t.SurfaceHover).Border(1, t.Border).Children(func() {
-		for i, label := range labels {
-			s := parts.Segment(i).Padding(4, 12).Radius(radius)
-			if i != *selected && s.Hovered() {
-				s.Background(t.SurfaceHover)
-			}
-			s.Children(func() {
-				text := ui.Text(c, label).SingleLine()
-				if i != *selected {
-					return
-				}
-				// Absolute elements paint above the flow, so only another one
-				// can show above the thumb. The label in the flow keeps the
-				// segment's size.
-				text.Opacity(0)
-				ui.Box(c).Absolute().Left(0).Top(0).Right(0).Bottom(0).Radius(radius).Background(thumb).
-					Shadow(0, 1, 2, 0, ui.RGBA(0, 0, 0, .12)).
-					Transition(ui.ElementTransition{Animation: &ui.Snappy, Match: segThumb{id}})
-				ui.Text(c, label).SingleLine().Attach(ui.AnchorCenter, ui.AnchorCenter)
-			})
-		}
-	})
-}
-
-// link lightens the accent on a dark surface, where Windows' own is too deep
-// for text.
-func link(c *ui.Context, label, url string) {
-	e := ui.Link(c, label, url)
-	if t := c.Theme(); t.Dark {
-		e.TextColor(t.Accent.Mix(ui.Hex("#ffffff"), .45))
-	}
+	return ui.Column(c.Key(key)).Gap(8).Padding(12, 16).Transition(kit.RowMotion).Children(body)
 }
 
 func rowHead(c *ui.Context, label, help string, control func()) {
@@ -294,7 +147,7 @@ func rowHead(c *ui.Context, label, help string, control func()) {
 		text.Children(func() {
 			ui.Text(c, label)
 			if help != "" {
-				muted(c, help)
+				kit.Muted(c, help)
 			}
 		})
 		control()
@@ -370,7 +223,7 @@ func savedToast(running bool) string {
 
 func (a *App) overview(c *ui.Context) {
 	ui.Row(c).Gap(12).AlignItems(ui.Center).Children(func() {
-		title(c, locales.PageOverview()).Grow(1)
+		kit.Title(c, locales.PageOverview()).Grow(1)
 		if a.in != nil && !a.busy && a.chromeUpdate == nil && a.plusUpdate == nil {
 			var btn ui.Element
 			if a.checked {
@@ -386,7 +239,7 @@ func (a *App) overview(c *ui.Context) {
 	a.operation(c)
 	if a.in == nil {
 		if a.openErr != nil && !errors.Is(a.openErr, install.ErrNotInstalled) {
-			card(c, func() {
+			kit.Card(c, func() {
 				ui.Text(c, locales.ErrorTitle()).Bold()
 				ui.Text(c, a.openErr.Error()).Selectable()
 			})
@@ -396,11 +249,11 @@ func (a *App) overview(c *ui.Context) {
 	}
 	in := a.in
 	chromeReady, plusReady := a.engine.Downloaded(in)
-	card(c, func() {
+	kit.Card(c, func() {
 		ui.Row(c).Gap(12).AlignItems(ui.Center).Children(func() {
 			ui.Column(c).Grow(1).MinWidth(0).Gap(2).Children(func() {
 				ui.Text(c, locales.ChromeTitle(in.Chrome)).FontSize(16).FontWeight(600)
-				muted(c, locales.ChromeDetail(channelLabel(in.State.Channel), in.Arch))
+				kit.Muted(c, locales.ChromeDetail(channelLabel(in.State.Channel), in.Arch))
 			})
 			a.startButton(c)
 		})
@@ -428,7 +281,7 @@ func (a *App) overview(c *ui.Context) {
 			}
 		})
 	})
-	card(c, func() {
+	kit.Card(c, func() {
 		ui.Column(c).Gap(2).Children(func() {
 			if in.ChromePlus == "" {
 				ui.Text(c, locales.PlusNotInstalled()).FontSize(16).FontWeight(600)
@@ -436,9 +289,9 @@ func (a *App) overview(c *ui.Context) {
 			}
 			ui.Text(c, locales.PlusTitle(in.ChromePlus)).FontSize(16).FontWeight(600)
 			if in.Injection == install.SetDLL {
-				muted(c, locales.PlusSetDLL(in.ChromePlusDLL))
+				kit.Muted(c, locales.PlusSetDLL(in.ChromePlusDLL))
 			} else {
-				muted(c, locales.PlusVersionDLL())
+				kit.Muted(c, locales.PlusVersionDLL())
 			}
 		})
 		if v := in.State.ApprovedPlus; v != "" && (a.plusUpdate == nil || a.plusUpdate.Release.Tag == v) {
@@ -457,7 +310,7 @@ func (a *App) overview(c *ui.Context) {
 			}
 		})
 	})
-	panel(c.Key("folder"), func() {
+	kit.Panel(c.Key("folder"), func() {
 		settingRow(c, "folder", func() {
 			rowHead(c, locales.InstallFolder(), a.engine.Root, func() {
 				if ui.Button(c.Key("open"), locales.OpenButton()).Clicked() {
@@ -497,14 +350,14 @@ func (a *App) status(c *ui.Context, found bool, update func()) {
 
 func (a *App) operation(c *ui.Context) {
 	if f := a.failure(); f != nil {
-		card(c, func() {
+		kit.Card(c, func() {
 			ui.Row(c).Gap(12).Children(func() {
 				ui.Text(c, locales.BackgroundFailed(f.What)).Bold().TextColor(c.Theme().Danger).Grow(1)
-				muted(c, i18n.FormatDate(c.Locale(), f.Time.Local(), i18n.DateOptions{Date: i18n.MediumStyle, Time: i18n.ShortStyle}))
+				kit.Muted(c, i18n.FormatDate(c.Locale(), f.Time.Local(), i18n.DateOptions{Date: i18n.MediumStyle, Time: i18n.ShortStyle}))
 			})
 			if body := troubleBody(pitstop.Trouble(f.Trouble), f.Host); body != "" {
 				ui.Text(c, body)
-				muted(c, f.Error).Selectable()
+				kit.Muted(c, f.Error).Selectable()
 			} else {
 				ui.Text(c, f.Error).Selectable()
 			}
@@ -517,7 +370,7 @@ func (a *App) operation(c *ui.Context) {
 	}
 	switch {
 	case a.busy:
-		card(c, func() {
+		kit.Card(c, func() {
 			ui.Row(c).Gap(12).AlignItems(ui.Center).Children(func() {
 				ui.Text(c, phaseLabel(a.step.Phase)).Bold().Grow(1)
 				if ui.Button(c, locales.CancelButton()).Disabled(a.step.Phase == pitstop.Applying).Clicked() && a.cancel != nil {
@@ -534,16 +387,16 @@ func (a *App) operation(c *ui.Context) {
 				if a.speed > 0 {
 					line = locales.ProgressSpeed(mb(a.step.Done), mb(a.step.Total), mb(int64(a.speed)))
 				}
-				muted(c, line)
+				kit.Muted(c, line)
 			}
 		})
 	case a.elsewhere:
-		card(c, func() {
+		kit.Card(c, func() {
 			ui.Text(c, locales.BackgroundBusy()).Bold()
 			ui.Progress(c, -1).Label(locales.BackgroundBusy())
 		})
 	case errors.Is(a.opErr, pitstop.ErrChromeRunning):
-		card(c, func() {
+		kit.Card(c, func() {
 			ui.Text(c, locales.RunningTitle()).Bold()
 			if r, ok := errors.AsType[*pitstop.RunningError](a.opErr); ok && r.Elevated {
 				ui.Text(c, locales.RunningElevatedBody())
@@ -560,11 +413,11 @@ func (a *App) operation(c *ui.Context) {
 			})
 		})
 	case explained(a.opErr):
-		card(c, func() {
+		kit.Card(c, func() {
 			trouble, host := pitstop.Explain(a.opErr)
 			ui.Text(c, troubleTitle(trouble)).Bold().TextColor(c.Theme().Danger)
 			ui.Text(c, troubleBody(trouble, host))
-			muted(c, a.opErr.Error()).Selectable()
+			kit.Muted(c, a.opErr.Error()).Selectable()
 			ui.Row(c).Gap(8).Children(func() {
 				if a.retry != nil && ui.PrimaryButton(c, locales.TryAgainButton()).Clicked() {
 					a.retry()
@@ -575,7 +428,7 @@ func (a *App) operation(c *ui.Context) {
 			})
 		})
 	case a.opErr != nil:
-		card(c, func() {
+		kit.Card(c, func() {
 			ui.Text(c, locales.ErrorTitle()).Bold().TextColor(c.Theme().Danger)
 			msg := a.opErr.Error()
 			switch {
@@ -685,7 +538,7 @@ func (a *App) waiting(c *ui.Context, version string, downloaded bool, apply func
 }
 
 func (a *App) setupCard(c *ui.Context) {
-	card(c, func() {
+	kit.Card(c, func() {
 		ui.Text(c, locales.SetupTitle()).FontSize(16).Bold()
 		ui.Text(c, locales.SetupBody(a.engine.Root))
 		channels := make([]string, len(omaha.Channels))
@@ -697,14 +550,14 @@ func (a *App) setupCard(c *ui.Context) {
 			}
 		}
 		rowHead(c, locales.SetupChannel(), "", func() {
-			if segmented(c, "setup-channel", &channel, channels...).Label(locales.SetupChannel()).Changed() {
+			if kit.Segmented(c, "setup-channel", &channel, channels...).Label(locales.SetupChannel()).Changed() {
 				a.setupChannel = string(omaha.Channels[channel])
 			}
 		})
 		arches := []string{"x64", "x86", "arm64"}
 		arch := max(slices.Index(arches, a.setupArch), 0)
 		rowHead(c, locales.SetupArch(), "", func() {
-			if segmented(c, "setup-arch", &arch, arches...).Label(locales.SetupArch()).Changed() {
+			if kit.Segmented(c, "setup-arch", &arch, arches...).Label(locales.SetupArch()).Changed() {
 				a.setupArch = arches[arch]
 			}
 		})
@@ -719,15 +572,15 @@ func (a *App) setupCard(c *ui.Context) {
 }
 
 func (a *App) keptCard(c *ui.Context) {
-	heading(c, locales.RollbackTitle())
+	kit.Heading(c, locales.RollbackTitle())
 	chrome, okChrome := a.engine.ChromeRollback()
 	plus, okPlus := a.engine.ChromePlusRollback()
-	card(c, func() {
+	kit.Card(c, func() {
 		if !okChrome && !okPlus {
 			if a.in.State.DiscardReplaced {
-				muted(c, locales.RollbackOff())
+				kit.Muted(c, locales.RollbackOff())
 			} else {
-				muted(c, locales.RollbackNone())
+				kit.Muted(c, locales.RollbackNone())
 			}
 			return
 		}
@@ -735,7 +588,7 @@ func (a *App) keptCard(c *ui.Context) {
 			ui.Row(c.Key(what)).Gap(12).AlignItems(ui.Center).Children(func() {
 				ui.Text(c, label).Grow(1)
 				if size > 0 {
-					muted(c, mb(size))
+					kit.Muted(c, mb(size))
 				}
 				if ui.Button(c, locales.SwitchButton(version)).Disabled(a.busy).Clicked() {
 					a.switching, a.switchOpen = what, true
@@ -756,14 +609,14 @@ func (a *App) keptCard(c *ui.Context) {
 
 func (a *App) activity(c *ui.Context) {
 	ui.Row(c).Gap(12).AlignItems(ui.End).Children(func() {
-		heading(c, locales.ActivityTitle()).Grow(1)
+		kit.Heading(c, locales.ActivityTitle()).Grow(1)
 		if len(a.in.State.History) > 0 && ui.Button(c.Key("clear-activity"), locales.ActivityClear()).Disabled(a.busy).Clicked() {
 			a.clearOpen = true
 		}
 	})
-	card(c, func() {
+	kit.Card(c, func() {
 		if len(a.in.State.History) == 0 {
-			muted(c, locales.ActivityNone())
+			kit.Muted(c, locales.ActivityNone())
 			return
 		}
 		for i, e := range a.in.State.History {
@@ -772,7 +625,7 @@ func (a *App) activity(c *ui.Context) {
 			}
 			ui.Row(c.Key(i)).Gap(12).Children(func() {
 				ui.Text(c, describe(e)).Grow(1)
-				muted(c, i18n.FormatDate(c.Locale(), e.Time.Local(), i18n.DateOptions{Date: i18n.MediumStyle, Time: i18n.ShortStyle}))
+				kit.Muted(c, i18n.FormatDate(c.Locale(), e.Time.Local(), i18n.DateOptions{Date: i18n.MediumStyle, Time: i18n.ShortStyle}))
 			})
 		}
 	})
@@ -865,13 +718,13 @@ func (a *App) dialogs(c *ui.Context) {
 func (a *App) ready(c *ui.Context) bool {
 	switch {
 	case a.in == nil:
-		card(c, func() { ui.Text(c, locales.NoInstallBody()) })
+		kit.Card(c, func() { ui.Text(c, locales.NoInstallBody()) })
 		return false
 	case a.iniErr != nil:
-		card(c, func() { ui.Text(c, a.iniErr.Error()).Selectable() })
+		kit.Card(c, func() { ui.Text(c, a.iniErr.Error()).Selectable() })
 		return false
 	case a.draft == nil:
-		card(c, func() {
+		kit.Card(c, func() {
 			ui.Text(c, locales.IniMissingTitle()).Bold()
 			ui.Text(c, locales.IniMissingBody())
 			ui.Row(c).Children(func() {
@@ -886,7 +739,7 @@ func (a *App) ready(c *ui.Context) bool {
 }
 
 func (a *App) settings(c *ui.Context, name string, page options.Page) {
-	title(c, name)
+	kit.Title(c, name)
 	if !a.ready(c) {
 		return
 	}
@@ -902,7 +755,7 @@ func (a *App) settings(c *ui.Context, name string, page options.Page) {
 	case options.Keyboard:
 		a.keymapping(c)
 	case options.Advanced:
-		ui.Row(c).Margin(8, 0, 0).Transition(flow).Children(func() {
+		ui.Row(c).Margin(8, 0, 0).Transition(kit.Flow).Children(func() {
 			if ui.Button(c, locales.RawEditButton()).Clicked() {
 				a.startRaw()
 			}
@@ -945,7 +798,7 @@ func (a *App) optionRow(c *ui.Context, o options.Option) {
 					labelClicked = ui.Text(c.Key("label"), label).Clicked()
 				})
 				if o.Help != nil {
-					muted(c, o.Help(msgs))
+					kit.Muted(c, o.Help(msgs))
 				}
 				if errText != "" {
 					ui.Text(c, errText).FontSize(12).TextColor(t.Danger)
@@ -988,7 +841,7 @@ func (a *App) optionControl(c *ui.Context, o options.Option, label string, label
 				chosen = i
 			}
 		}
-		ctrl = segmented(c, o.Key, &chosen, labels...).Label(label)
+		ctrl = kit.Segmented(c, o.Key, &chosen, labels...).Label(label)
 		if ctrl.Changed() {
 			a.set(o.Section, o.Key, o.Choices[chosen].Value)
 		}
@@ -997,7 +850,7 @@ func (a *App) optionControl(c *ui.Context, o options.Option, label string, label
 		v := float64(n)
 		ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 			ctrl = ui.NumberInput(c.Key("control"), &v, float64(o.Min), float64(o.Max), 50).Width(140).Label(label)
-			muted(c, locales.Milliseconds())
+			kit.Muted(c, locales.Milliseconds())
 		})
 		if ctrl.Changed() {
 			a.set(o.Section, o.Key, strconv.Itoa(int(v)))
@@ -1006,7 +859,7 @@ func (a *App) optionControl(c *ui.Context, o options.Option, label string, label
 		id := "option/" + o.Key
 		v := ini.Unquote(raw)
 		ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
-			if v != "" && iconButton(c.Key("clear"), closeIcon, locales.HotkeyClear()).Clicked() {
+			if v != "" && kit.IconButton(c, "clear", closeIcon, locales.HotkeyClear(), "").Clicked() {
 				a.set(o.Section, o.Key, "")
 			}
 			a.hotkeyField(c, id, label, v, false, func(s string) { a.set(o.Section, o.Key, s) })
@@ -1017,7 +870,7 @@ func (a *App) optionControl(c *ui.Context, o options.Option, label string, label
 		return
 	case options.Folder:
 		mode := folderMode(o, value)
-		ctrl = segmented(c, o.Key, &mode, locales.FolderPortable(), locales.FolderChrome(), locales.FolderCustom()).Label(label)
+		ctrl = kit.Segmented(c, o.Key, &mode, locales.FolderPortable(), locales.FolderChrome(), locales.FolderCustom()).Label(label)
 		if ctrl.Changed() {
 			switch mode {
 			case folderPortable:
@@ -1066,7 +919,7 @@ func (a *App) optionBody(c *ui.Context, o options.Option, label string, labelCli
 	case options.Folder:
 		mode := folderMode(o, o.Effective(raw, present))
 		if mode == folderCustom {
-			ui.Row(c.Key("path")).Gap(8).AlignItems(ui.Center).Transition(rowMotion).Children(func() {
+			ui.Row(c.Key("path")).Gap(8).AlignItems(ui.Center).Transition(kit.RowMotion).Children(func() {
 				v := raw
 				if ui.TextInput(c.Key("field"), &v).Grow(1).MinWidth(0).Label(label).Changed() {
 					a.set(o.Section, o.Key, v)
@@ -1077,7 +930,7 @@ func (a *App) optionBody(c *ui.Context, o options.Option, label string, labelCli
 			})
 		}
 		if o.Key == "data_dir" && mode != folderPortable {
-			ui.Text(c.Key("note"), locales.OptDataDirNote()).FontSize(12).TextColor(c.Theme().Warning).Transition(rowMotion)
+			ui.Text(c.Key("note"), locales.OptDataDirNote()).FontSize(12).TextColor(c.Theme().Warning).Transition(kit.RowMotion)
 		}
 	case options.NameList:
 		names := options.SplitNames(raw)
@@ -1143,16 +996,16 @@ func (a *App) browseFolder(o options.Option) {
 }
 
 func (a *App) keymapping(c *ui.Context) {
-	heading(c, locales.KeymapTitle())
-	muted(c, locales.KeymapHelp())
+	kit.Heading(c, locales.KeymapTitle())
+	kit.Muted(c, locales.KeymapHelp())
 	kvs := a.draft.Keys("keymapping")
 	saved := len(kvs)
 	if a.adding == mappingRow {
 		kvs = append(kvs, ini.KeyValue{})
 	}
-	card(c, func() {
+	kit.Card(c, func() {
 		if len(kvs) == 0 {
-			muted(c, locales.KeymapNone())
+			kit.Muted(c, locales.KeymapNone())
 		}
 		for i, kv := range kvs {
 			a.mapping(c, i, kv)
@@ -1160,7 +1013,7 @@ func (a *App) keymapping(c *ui.Context) {
 		if e := a.fieldErr["keymapping"]; e != "" {
 			ui.Text(c, e).FontSize(12).TextColor(c.Theme().Danger)
 		}
-		ui.Row(c.Key("add-row")).Transition(flow).Children(func() {
+		ui.Row(c.Key("add-row")).Transition(kit.Flow).Children(func() {
 			if ui.Button(c.Key("add"), locales.KeymapAdd()).Disabled(a.adding == mappingRow).Clicked() {
 				a.adding = mappingRow
 				a.startRecording(sourceField(saved))
@@ -1200,7 +1053,7 @@ func (a *App) mapping(c *ui.Context, i int, kv ini.KeyValue) {
 	chooseCommand := func() {
 		a.commandReference(func(id string) { setTarget("command:" + id) })
 	}
-	ui.Column(c.Key(i)).Gap(4).Transition(rowMotion).Children(func() {
+	ui.Column(c.Key(i)).Gap(4).Transition(kit.RowMotion).Children(func() {
 		ui.Row(c).Wrap().Gap(8).AlignItems(ui.Center).Children(func() {
 			a.hotkeyField(c, sourceField(i), locales.KeymapSource(), kv.Key, false, setSource)
 			if kv == (ini.KeyValue{}) {
@@ -1212,7 +1065,7 @@ func (a *App) mapping(c *ui.Context, i int, kv ini.KeyValue) {
 			if command {
 				kind = 1
 			}
-			if segmented(c, fmt.Sprintf("keymapping/%d/kind", i), &kind, locales.KeymapKindShortcut(), locales.KeymapKindCommand()).Label(locales.KeymapTarget()).Changed() {
+			if kit.Segmented(c, fmt.Sprintf("keymapping/%d/kind", i), &kind, locales.KeymapKindShortcut(), locales.KeymapKindCommand()).Label(locales.KeymapTarget()).Changed() {
 				if kind == 1 {
 					setTarget("command:")
 					chooseCommand()
@@ -1229,7 +1082,7 @@ func (a *App) mapping(c *ui.Context, i int, kv ini.KeyValue) {
 				a.hotkeyField(c, targetField(i), locales.KeymapTarget(), kv.Value, true, setTarget)
 			}
 			ui.Box(c).Grow(1)
-			if iconButton(c.Key("remove"), trashIcon, locales.ListRemove()).Clicked() {
+			if kit.IconButton(c, "remove", trashIcon, locales.ListRemove(), "").Clicked() {
 				a.writeMappings(slices.Delete(a.draft.Keys("keymapping"), i, i+1))
 			}
 		})
@@ -1238,7 +1091,7 @@ func (a *App) mapping(c *ui.Context, i int, kv ini.KeyValue) {
 		case !validSource(kv.Key):
 			ui.Text(c, locales.InvalidHotkey()).FontSize(12).TextColor(t.Danger)
 		case kv.Value == "" || kv.Value == "command:":
-			muted(c, locales.InvalidTarget())
+			kit.Muted(c, locales.InvalidTarget())
 		case !options.ValidTarget(kv.Value):
 			ui.Text(c, locales.InvalidTarget()).FontSize(12).TextColor(t.Danger)
 		default:
@@ -1285,7 +1138,7 @@ func (a *App) ownSettings() []ownSetting {
 }
 
 func (a *App) ownSettingsPage(c *ui.Context) {
-	title(c, locales.PageSettings())
+	kit.Title(c, locales.PageSettings())
 	msgs := locales.In(c.Locale())
 	sections(c, a.ownSettings(), func(s ownSetting) string { return groupName(s.Option, msgs) }, func(s ownSetting) { s.row(c) })
 }
@@ -1306,7 +1159,7 @@ func (a *App) languageRow(c *ui.Context) {
 	label := locales.LanguageLabel()
 	settingRow(c, "language", func() {
 		rowHead(c, label, "", func() {
-			if segmented(c, "language", &chosen, labels...).Label(label).Changed() {
+			if kit.Segmented(c, "language", &chosen, labels...).Label(label).Changed() {
 				a.Language = tags[chosen]
 				a.SetLanguage(a.Language)
 			}
@@ -1320,7 +1173,7 @@ func (a *App) themeRow(c *ui.Context) {
 	label := locales.ThemeLabel()
 	settingRow(c, "theme", func() {
 		rowHead(c, label, "", func() {
-			if segmented(c, "theme", &chosen, locales.ThemeSystem(), locales.ThemeLight(), locales.ThemeDark()).Label(label).Changed() {
+			if kit.Segmented(c, "theme", &chosen, locales.ThemeSystem(), locales.ThemeLight(), locales.ThemeDark()).Label(label).Changed() {
 				a.Theme = names[chosen]
 				a.SetTheme(a.Theme)
 			}
@@ -1361,7 +1214,7 @@ func (a *App) hostRow(c *ui.Context) {
 	label := locales.UpdatesHost()
 	settingRow(c, "host", func() {
 		rowHead(c, label, locales.UpdatesHostHelp(), func() {
-			if segmented(c, "host", &chosen, labels...).Label(label).Changed() {
+			if kit.Segmented(c, "host", &chosen, labels...).Label(label).Changed() {
 				a.setState(func(s *install.State) { s.DownloadHost = hosts[chosen] })
 			}
 		})
@@ -1380,7 +1233,7 @@ func (a *App) channelRow(c *ui.Context) {
 	label := locales.UpdatesChannel()
 	settingRow(c, "channel", func() {
 		rowHead(c, label, locales.UpdatesChannelHelp(), func() {
-			if segmented(c, "channel", &chosen, labels...).Label(label).Changed() {
+			if kit.Segmented(c, "channel", &chosen, labels...).Label(label).Changed() {
 				ch := omaha.Channels[chosen]
 				a.setState(func(s *install.State) {
 					s.Channel = ch
@@ -1419,7 +1272,7 @@ func (a *App) intervalRow(c *ui.Context) {
 	label := locales.UpdatesInterval()
 	settingRow(c, "interval", func() {
 		rowHead(c, label, "", func() {
-			if segmented(c, "interval", &chosen, labels...).Label(label).Changed() {
+			if kit.Segmented(c, "interval", &chosen, labels...).Label(label).Changed() {
 				a.setCheckHours(install.CheckHours[chosen])
 			}
 		})
@@ -1427,7 +1280,7 @@ func (a *App) intervalRow(c *ui.Context) {
 }
 
 func (a *App) searchResults(c *ui.Context) {
-	title(c, locales.SearchResults(a.query))
+	kit.Title(c, locales.SearchResults(a.query))
 	en, zh := locales.In("en"), locales.In("zh-Hans")
 	var own []ownSetting
 	for _, s := range a.ownSettings() {
@@ -1442,7 +1295,7 @@ func (a *App) searchResults(c *ui.Context) {
 		}
 	}
 	if len(own) > 0 {
-		panel(c.Key("own"), func() {
+		kit.Panel(c.Key("own"), func() {
 			for _, s := range own {
 				s.row(c)
 			}
@@ -1450,14 +1303,14 @@ func (a *App) searchResults(c *ui.Context) {
 	}
 	if len(found) == 0 {
 		if len(own) == 0 {
-			muted(c, locales.SearchNone(a.query))
+			kit.Muted(c, locales.SearchNone(a.query))
 		}
 		return
 	}
 	if !a.ready(c) {
 		return
 	}
-	panel(c.Key("options"), func() {
+	kit.Panel(c.Key("options"), func() {
 		for _, o := range found {
 			a.optionRow(c, o)
 		}
@@ -1470,14 +1323,13 @@ func (a *App) pendingBar(c *ui.Context) {
 		return
 	}
 	t := c.Theme()
-	ui.Column(c.Key("pending")).Background(t.Surface).Transition(ui.ElementTransition{Animation: &ui.Snappy,
-		Enter: &ui.Motion{Collapse: true}, Exit: &ui.Motion{Collapse: true}}).Children(func() {
+	ui.Column(c.Key("pending")).Background(t.Surface).Transition(kit.RowMotion).Children(func() {
 		ui.Divider(c)
-		ui.Column(c).Padding(12, 32).AlignItems(ui.Center).Children(func() {
-			ui.Row(c).Gap(12).AlignItems(ui.Center).FillWidth().MaxWidth(contentWidth).Children(func() {
+		ui.Column(c).Padding(12, kit.PageSide).AlignItems(ui.Center).Children(func() {
+			ui.Row(c).Gap(12).AlignItems(ui.Center).FillWidth().MaxWidth(kit.ContentWidth).Children(func() {
 				ui.Column(c).Grow(1).MinWidth(0).Gap(2).Children(func() {
 					ui.Text(c, locales.PendingCount(n)).FontWeight(600)
-					muted(c, locales.PendingHint())
+					kit.Muted(c, locales.PendingHint())
 				})
 				if ui.Button(c, locales.ReviewButton()).Clicked() {
 					a.startReview()
@@ -1494,9 +1346,9 @@ func (a *App) pendingBar(c *ui.Context) {
 }
 
 func (a *App) reviewView(c *ui.Context) {
-	ui.Column(c).Padding(24, 32, 8).Gap(4).Children(func() {
-		title(c, locales.ReviewTitle())
-		muted(c, locales.ReviewDetail(a.iniPath, a.draft.Encoding().String())).Selectable()
+	ui.Column(c).Padding(kit.Top(c), kit.PageSide, 8).Gap(4).Children(func() {
+		kit.Title(c, locales.ReviewTitle())
+		kit.Muted(c, locales.ReviewDetail(a.iniPath, a.draft.Encoding().String())).Selectable()
 	})
 	editor.DiffView(c, a.review).Grow(1).FillWidth()
 	ui.Row(c).Gap(12).Padding(12, 32).Justify(ui.End).Children(func() {
@@ -1511,10 +1363,10 @@ func (a *App) reviewView(c *ui.Context) {
 
 func (a *App) rawView(c *ui.Context) {
 	raw := a.raw // Done ends the editing in this frame
-	ui.Row(c).Padding(24, 32, 8).Gap(12).AlignItems(ui.Center).Children(func() {
+	ui.Row(c).Padding(kit.Top(c), kit.PageSide, 8).Gap(12).AlignItems(ui.Center).Children(func() {
 		ui.Column(c).Grow(1).Children(func() {
-			title(c, locales.RawTitle())
-			muted(c, a.iniPath).Selectable()
+			kit.Title(c, locales.RawTitle())
+			kit.Muted(c, a.iniPath).Selectable()
 		})
 		if ui.PrimaryButton(c.Key("done"), locales.DoneButton()).Clicked() {
 			a.endRaw()
@@ -1527,22 +1379,22 @@ func (a *App) rawView(c *ui.Context) {
 }
 
 func (a *App) about(c *ui.Context) {
-	title(c, locales.PageAbout())
+	kit.Title(c, locales.PageAbout())
 	ui.Row(c).Gap(16).AlignItems(ui.Center).Padding(8, 0, 12).Children(func() {
 		ui.Image(c, appIcon).Size(64, 64).Shrink(0)
 		ui.Column(c).Gap(2).MinWidth(0).Children(func() {
 			ui.Text(c, locales.AppTitle()).FontSize(20).FontWeight(600)
 			ui.Text(c, locales.AboutBody())
-			muted(c, locales.AboutVersion(a.version)).Selectable()
+			kit.Muted(c, locales.AboutVersion(a.version)).Selectable()
 			if ui.Button(c.Key("self-update"), locales.CheckButton()).Disabled(a.busy).Clicked() {
 				a.CheckForUpdates()
 			}
 		})
 	})
-	panel(c.Key("links"), func() {
+	kit.Panel(c.Key("links"), func() {
 		project := func(name, help, url string) {
 			settingRow(c, name, func() {
-				rowHead(c, name, help, func() { link(c, "GitHub", url) })
+				rowHead(c, name, help, func() { kit.Link(c, "GitHub", url) })
 			})
 		}
 		project(locales.AppTitle(), locales.AboutPitstopHelp(), "https://github.com/Bush2021/pitstop")

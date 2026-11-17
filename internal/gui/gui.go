@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Bush2021/mygo-kit/desk"
 	"github.com/egoist/mygo/ui/editor"
 
 	"github.com/Bush2021/chrome_update/omaha"
@@ -47,8 +48,8 @@ type Host struct {
 }
 
 const (
-	ThemeLight = "light"
-	ThemeDark  = "dark"
+	ThemeLight = desk.ThemeLight
+	ThemeDark  = desk.ThemeDark
 )
 
 type App struct {

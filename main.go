@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Bush2021/mygo-kit"
+	"github.com/Bush2021/mygo-kit/desk"
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/netproxy"
 	"github.com/egoist/mygo/plugins/updater"
@@ -35,17 +37,6 @@ func picked(paths []string, err error) string {
 		return ""
 	}
 	return paths[0]
-}
-
-func showTheme(name string) {
-	switch name {
-	case gui.ThemeLight:
-		mygo.Theme.SetSource(mygo.ThemeLight)
-	case gui.ThemeDark:
-		mygo.Theme.SetSource(mygo.ThemeDark)
-	default:
-		mygo.Theme.SetSource(mygo.ThemeSystem)
-	}
 }
 
 func main() {
@@ -78,14 +69,14 @@ func main() {
 	mygo.App.WhenReady(func() {
 		var win *mygo.Window
 		theme, _ := os.ReadFile(filepath.Join(own, "theme"))
-		showTheme(strings.TrimSpace(string(theme)))
+		desk.ShowTheme(strings.TrimSpace(string(theme)))
 		app := gui.New(engine, mygo.App.Version(), gui.Host{
 			Post:        func(fn func()) { win.Update(fn) },
 			Language:    mygo.App.ChosenLocale(),
 			SetLanguage: mygo.App.SetLocale,
 			Theme:       strings.TrimSpace(string(theme)),
 			SetTheme: func(name string) {
-				showTheme(name)
+				desk.ShowTheme(name)
 				if err := os.WriteFile(filepath.Join(own, "theme"), []byte(name), 0o644); err != nil {
 					log.Print(err)
 				}
@@ -100,16 +91,15 @@ func main() {
 			OpenFolder:      func(path string) { mygo.Shell.OpenPath(path) },
 			CheckForUpdates: updater.CheckForUpdates,
 		})
-		win = mygo.NewWindow(mygo.WindowOptions{
+		win = mygo.NewWindow(kit.Window(mygo.WindowOptions{
 			Title:     locales.AppTitle(),
 			Width:     1000,
 			Height:    720,
 			MinWidth:  760,
 			MinHeight: 520,
 			StateKey:  "main",
-			Vibrancy:  mygo.VibrancyMica,
 			Content:   ui.View(app.View),
-		})
+		}))
 		keepKeys(win, app.Recording)
 		app.Watch()
 		mygo.App.OnSecondInstance(func([]string, string) {

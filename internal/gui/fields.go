@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"github.com/Bush2021/mygo-kit"
 	"slices"
 	"strings"
 
@@ -13,13 +14,9 @@ import (
 )
 
 var (
-	closeIcon = icon(`<path d="M18 6 6 18M6 6l12 12"/>`)
-	trashIcon = icon(`<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5"/>`)
+	closeIcon = kit.Icon(`<path d="M18 6 6 18M6 6l12 12"/>`)
+	trashIcon = kit.Icon(`<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5"/>`)
 )
-
-func iconButton(c *ui.Context, shape *ui.SVG, label string) ui.Element {
-	return ui.Button(c, "").Label(label).Tooltip(label).Children(func() { ui.Icon(c, shape) })
-}
 
 // keyNames are the keys a shortcut can use, as chrome++.ini writes them. A
 // key that isn't here can't be recorded.
@@ -136,10 +133,10 @@ func (a *App) hotkeyField(c *ui.Context, id, label, value string, plain bool, se
 			if held := heldKeys(c.Modifiers()); len(held) > 0 {
 				keycaps(c, held)
 			} else {
-				muted(c, locales.HotkeyPress()).SingleLine()
+				kit.Muted(c, locales.HotkeyPress()).SingleLine()
 			}
 		case value == "":
-			muted(c, locales.HotkeyNone()).SingleLine()
+			kit.Muted(c, locales.HotkeyNone()).SingleLine()
 		default:
 			keycaps(c, strings.Split(value, "+"))
 		}
@@ -171,7 +168,7 @@ func (a *App) hotkeyNote(c *ui.Context, field, value string) {
 	if used != "" {
 		ui.Text(c, locales.HotkeyUsedBy(used)).FontSize(12).TextColor(c.Theme().Warning)
 	} else if label, ok := options.ChromeShortcut(value, msgs); ok {
-		muted(c, locales.HotkeyChrome(label))
+		kit.Muted(c, locales.HotkeyChrome(label))
 	}
 }
 
@@ -263,7 +260,7 @@ func (a *App) referenceDialog(c *ui.Context) {
 					take(customValue)
 				}
 				if len(found) == 0 && !custom {
-					muted(c, locales.ReferenceNone())
+					kit.Muted(c, locales.ReferenceNone())
 				}
 				group := ""
 				for _, e := range found {
@@ -276,7 +273,7 @@ func (a *App) referenceDialog(c *ui.Context) {
 					}
 				}
 			})
-			link(c, r.linkLabel, r.link)
+			kit.Link(c, r.linkLabel, r.link)
 		})
 	})
 }
@@ -300,7 +297,7 @@ func entryRow(c *ui.Context, e options.Entry, msgs locales.Messages) ui.Element 
 	}
 	return row.Children(func() {
 		ui.Text(c, e.Label(msgs)).Grow(1).MinWidth(0)
-		muted(c, detail).SingleLine()
+		kit.Muted(c, detail).SingleLine()
 	})
 }
 
@@ -313,7 +310,7 @@ func (a *App) lines(c *ui.Context, id, label, placeholder string, items []string
 	}
 	remove := -1
 	for i := range rows {
-		ui.Row(c.Key(i)).Gap(8).AlignItems(ui.Center).Transition(rowMotion).Children(func() {
+		ui.Row(c.Key(i)).Gap(8).AlignItems(ui.Center).Transition(kit.RowMotion).Children(func() {
 			field := ui.TextInput(c.Key("field"), &rows[i]).Grow(1).MinWidth(0).Label(label).Placeholder(placeholder)
 			if a.focusLine == id && i == len(rows)-1 {
 				field.Focus()
@@ -325,7 +322,7 @@ func (a *App) lines(c *ui.Context, id, label, placeholder string, items []string
 				}
 				write(rows)
 			}
-			if iconButton(c.Key("remove"), trashIcon, locales.ListRemove()).Clicked() {
+			if kit.IconButton(c, "remove", trashIcon, locales.ListRemove(), "").Clicked() {
 				remove = i
 			}
 		})

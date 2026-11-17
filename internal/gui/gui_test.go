@@ -65,6 +65,8 @@ func newHarness(t *testing.T, versions ...string) *harness {
 	h.engine = engine
 	h.a = New(engine, "0.1.0", h.host())
 	h.tt = ui.NewTester(h.a.View, 1000, 1000)
+	// A tester draws no window buttons; leave their room as a window does.
+	h.tt.SetTitleBar(ui.TitleBar{Height: 32, Right: 138, Bottom: 32})
 	return h
 }
 
@@ -1409,6 +1411,8 @@ func TestOneCheckButton(t *testing.T) {
 	// A window opened on the install has not checked yet.
 	h.a = New(h.engine, "0.1.0", h.host())
 	h.tt = ui.NewTester(h.a.View, 1000, 1000)
+	// A tester draws no window buttons; leave their room as a window does.
+	h.tt.SetTitleBar(ui.TitleBar{Height: 32, Right: 138, Bottom: 32})
 	buttons := func() (n int) {
 		for _, s := range h.tt.Texts() {
 			if s == "Check for updates" {
