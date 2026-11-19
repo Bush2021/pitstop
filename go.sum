@@ -2,6 +2,8 @@ github.com/404Setup/go-zucchini v1.0.0 h1:X0upuWZeyS+NxzcsZbE9Zhhd0ahfv1UBx7cYon
 github.com/404Setup/go-zucchini v1.0.0/go.mod h1:cCQjYyrRhucRSexgq1NfevwxfeFiSuyZRDTO23u3npw=
 github.com/Bush2021/chrome_update v0.8.1 h1:9wzrxnRMgmVa2MuZyE7B/KpSlWnqPO0k+ZGMk7eEbEo=
 github.com/Bush2021/chrome_update v0.8.1/go.mod h1:KfB5kjcdZLBs3kIXOfYMnkkJKxs1gljHSnhj2yQz8pw=
+github.com/Bush2021/mygo-kit v0.2.0 h1:IkkSnDE2SZNbgEzxWWnm9HB/6u3vOx9qKlcQqURL5S0=
+github.com/Bush2021/mygo-kit v0.2.0/go.mod h1:Jgq63gbG6zSW0PG0WXMG7eltLguIs6ImFSEWxK8bLLE=
 github.com/ProtonMail/go-crypto v1.4.1 h1:9RfcZHqEQUvP8RzecWEUafnZVtEvrBVL9BiF67IQOfM=
 github.com/ProtonMail/go-crypto v1.4.1/go.mod h1:e1OaTyu5SYVrO9gKOEhTc+5UcXtTUa+P3uLudwcgPqo=
 github.com/cloudflare/circl v1.6.2 h1:hL7VBpHHKzrV5WTfHCaBsgx/HGbBYlgrwvNXEVDYYsQ=
