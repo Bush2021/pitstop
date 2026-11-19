@@ -42,8 +42,12 @@ type harness struct {
 }
 
 func newHarness(t *testing.T, versions ...string) *harness {
+	return newHarnessIn(t, filepath.Join(t.TempDir(), "Chrome"), versions...)
+}
+
+func newHarnessIn(t *testing.T, root string, versions ...string) *harness {
 	h := &harness{t: t, s: pitstoptest.NewServers(t, versions...), posts: make(chan func(), 4096)}
-	engine, err := pitstop.New(filepath.Join(t.TempDir(), "Chrome"), h.s.Client())
+	engine, err := pitstop.New(root, h.s.Client())
 	if err != nil {
 		t.Fatal(err)
 	}
